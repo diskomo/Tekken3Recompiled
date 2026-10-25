@@ -121,7 +121,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--bank', type=Path, default=Path('workspace/jun-import/t3-arcade/bankedroms.bin'))
     ap.add_argument('--output', type=Path, default=Path('workspace/jun-import/jun'))
-    ap.add_argument('--disc', type=Path, default=Path('disc/Tekken 3 (USA) (Track 1).bin'))
+    ap.add_argument('--disc', type=Path, default=Path('disc/Tekken 3 (USA).cue'))
     ap.add_argument('--exe', type=Path, default=Path('disc/SLUS_004.02'))
     args = ap.parse_args()
     bank = args.bank.read_bytes()

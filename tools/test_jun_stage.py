@@ -172,7 +172,7 @@ def main():
     # not just a manually populated character array. Both controller sides,
     # all Jun outfits, initial/rematch state and every ladder index are covered.
     bns,*_=load_us_table(ROOT/'disc/SLUS_004.02')
-    with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as source:
+    with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as source:
         overlay=source.read_at(bns[5].offset,bns[5].size)
     m.write(0x800b0548,overlay)
     cases=0

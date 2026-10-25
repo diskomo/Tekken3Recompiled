@@ -782,7 +782,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--track",
         type=Path,
-        default=Path("disc/Tekken 3 (USA) (Track 1).bin"),
+        default=Path("disc/Tekken 3 (USA).cue"),
     )
     parser.add_argument("--package-id", required=True)
     parser.add_argument("--version", required=True)

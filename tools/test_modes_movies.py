@@ -27,7 +27,7 @@ def main():
 
     # Execute the native menu filtering loop with fresh and unlocked progress.
     table, *_ = load_us_table(ROOT/'disc/SLUS_004.02')
-    with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as source:
+    with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as source:
         data = source.read_at(table[10].offset, table[10].size)
     ram = bytearray(0x800000)
     ram[0xb8d58:0xb8d58+len(data)] = data
@@ -45,7 +45,7 @@ def main():
         assert (10 in modes) == unlocked, modes
     print('PASS: native main menu exposes Ball and Theatre with production flags')
 
-    with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as source:
+    with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as source:
         data = source.read_at(table[301].offset, table[301].size)
     ram = bytearray(0x800000)
     ram[0xb8d58:0xb8d58+len(data)] = data

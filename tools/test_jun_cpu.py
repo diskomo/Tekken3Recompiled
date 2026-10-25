@@ -67,7 +67,7 @@ def main():
     harness=OUT/'patch-test.exe'
     subprocess.run([str(compiler),'-std=c11','-O2',str(ROOT/'tools/tests/jun_cpu_patch_test.c'),'-o',str(harness)],check=True)
     patched={};raw={}
-    with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as source:
+    with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as source:
         for record in (0,5,7):
             data=source.read_at(table[record].offset,table[record].size)
             memory=original.copy();memory[0xb0548:0xb0548+len(data)]=data

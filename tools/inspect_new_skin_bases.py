@@ -23,7 +23,7 @@ parser.add_argument('--characters', default='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
 args = parser.parse_args()
 faces = Image.new('RGB', (7*150, 3*180), '#333333')
 face_draw = ImageDraw.Draw(faces)
-with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as source:
+with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as source:
     for cid in map(int,args.characters.split(',')):
         models = list(exe_at(0x800958c4+cid*4, 4))
         print('character', cid, 'models', models)

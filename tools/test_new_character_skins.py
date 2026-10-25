@@ -59,7 +59,7 @@ subprocess.run([str(compiler),'-std=c11','-Wall','-Wextra','-I',str(ROOT/'psxrec
     str(ROOT/'tools/tests/character_skin_match_test.c'),'-o',str(matcher)],check=True)
 table,_,_=load_us_table(ROOT/'disc/SLUS_004.02')
 keys=list(SPECS)
-with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as disc:
+with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as disc:
     for index,(key,spec) in enumerate(SPECS.items()):
         entry=table[spec['record']];raw=disc.read_at(entry.offset,entry.size)
         assert hashlib.sha256(raw).hexdigest()==spec['sha']

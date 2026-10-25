@@ -134,9 +134,20 @@ cmake --build build-release --target psx-runtime
 ```
 
 Apple's linker has no `--wrap`, so on macOS the game hooks rename the
-generated routine at compile time instead (`tekken3_wrap_generated` in
-`CMakeLists.txt`). The Jun import, Easy Setup and the in-launcher updater are
-still Windows-only.
+hooked routine at compile time instead (`tekken3_wrap_generated` and
+`tekken3_wrap_runtime` in `CMakeLists.txt`). Easy Setup and the in-launcher
+updater are still Windows-only.
+
+The Jun import also runs on macOS. Install MAME 0.289 (`brew install mame`)
+and the pinned Pillow, then run the importer and reconfigure:
+
+```bash
+python3 -m venv workspace/.venv-import
+workspace/.venv-import/bin/pip install -r tools/requirements-import.txt
+workspace/.venv-import/bin/python tools/import_jun.py --ttt1 tektagt.zip --t3-arcade tekken3.zip --no-rebuild
+cmake -S . -B build-release -DTEKKEN3_JUN_EXPERIMENTAL=ON
+cmake --build build-release --target psx-runtime
+```
 
 Zip prefix for CI artifacts: `tekken3`.
 

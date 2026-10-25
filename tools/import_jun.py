@@ -35,7 +35,9 @@ def main():
     import convert_jun_moves as combat, prepare_jun_voices as voices
     ttt=(args.ttt1 or choose('Select your tektagt.zip (TTT1 arcade)','*.zip')).resolve()
     t3=(args.t3_arcade or choose('Select your tekken3.zip (Tekken 3 arcade)','*.zip')).resolve()
-    mame=(args.mame or choose('Select MAME 0.289 executable','*.exe')).resolve()
+    # Homebrew and Linux packages put MAME on PATH; Windows players pick mame.exe.
+    found=shutil.which('mame')
+    mame=(args.mame or (Path(found) if found else None) or choose('Select MAME 0.289 executable','*.exe')).resolve()
     candidates=[ROOT/'psxrecomp/recompiler/build/psxrecomp-game.exe',ROOT/'build-recompiler/psxrecomp-game.exe',ROOT/'psxrecomp/recompiler/build/psxrecomp-game']
     emitter=args.recompiler or next((p for p in candidates if p.is_file()),None)
     if not emitter:raise ValueError('The psxrecomp-game emitter is missing. Build the SDK or use the setup release.')

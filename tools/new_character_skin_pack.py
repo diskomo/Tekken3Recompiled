@@ -113,7 +113,7 @@ def main():
     ap.add_argument('--skin',choices=list(SPECS)+['all'],default='all')
     args=ap.parse_args()
     table,_,_=load_us_table(ROOT/'disc/SLUS_004.02')
-    with open_bns_source(ROOT/'disc/Tekken 3 (USA) (Track 1).bin') as disc:
+    with open_bns_source(ROOT/'disc/Tekken 3 (USA).cue') as disc:
         for key,spec in SPECS.items():
             if args.skin not in ('all',key): continue
             entry=table[spec['record']]

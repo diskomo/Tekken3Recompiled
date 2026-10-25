@@ -59,9 +59,28 @@ function(tekken3_wrap_generated)
         if(NOT _definer)
             message(FATAL_ERROR "No generated shard defines ${_symbol}; regenerate game C")
         endif()
+        # A shard compiled through a modified copy defines its routines there.
+        if(TEKKEN3_REPLACED_SHARD AND _definer STREQUAL TEKKEN3_REPLACED_SHARD)
+            set(_definer "${TEKKEN3_REPLACEMENT_SHARD}")
+        endif()
         target_compile_definitions(psx-runtime PRIVATE "${_symbol}=__wrap_${_symbol}")
         # -U/-D follow the target definitions on the command line, so this wins.
         set_property(SOURCE "${_definer}" APPEND PROPERTY COMPILE_OPTIONS
+            "-U${_symbol}" "-D${_symbol}=__real_${_symbol}")
+    endforeach()
+endfunction()
+
+# Runtime functions are called directly rather than through the dispatch
+# table, so the source that defines them is named. As with GNU --wrap, calls
+# inside that source still reach the original.
+function(tekken3_wrap_runtime source)
+    foreach(_symbol IN LISTS ARGN)
+        if(NOT APPLE)
+            target_link_options(psx-runtime PRIVATE "-Wl,--wrap=${_symbol}")
+            continue()
+        endif()
+        target_compile_definitions(psx-runtime PRIVATE "${_symbol}=__wrap_${_symbol}")
+        set_property(SOURCE "${PSXRECOMP_ROOT}/runtime/src/${source}" APPEND PROPERTY COMPILE_OPTIONS
             "-U${_symbol}" "-D${_symbol}=__real_${_symbol}")
     endforeach()
 endfunction()
@@ -125,13 +144,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/jun/Jun-TTT1-combat.
 endif()
 option(TEKKEN3_JUN_EXPERIMENTAL "Build the Jun character import" ${_tekken3_jun_default})
 if(TEKKEN3_JUN_EXPERIMENTAL)
-    if(APPLE)
-        # Jun also wraps runtime and donor symbols, which tekken3_wrap_generated
-        # cannot rename yet.
-        message(FATAL_ERROR "The Jun import is not supported on macOS yet; "
-            "configure with -DTEKKEN3_JUN_EXPERIMENTAL=OFF")
-    endif()
     target_compile_definitions(psx-runtime PRIVATE TEKKEN3_JUN_EXPERIMENTAL=1)
+    # The pushback hooks compile a modified copy of shard 04 in its place.
+    set(TEKKEN3_REPLACED_SHARD "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_04.c")
+    set(TEKKEN3_REPLACEMENT_SHARD "${CMAKE_CURRENT_BINARY_DIR}/tekken3_jun_push_generated.c")
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_mod.c")
     set(JUN_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/generated")
     if(NOT EXISTS "${JUN_GENERATED_DIR}/jun-render.exe_full_00.c")
@@ -139,14 +155,9 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
     endif()
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_renderer.c")
     target_include_directories(psx-runtime PRIVATE "${JUN_GENERATED_DIR}")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80036CAC")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80035BC0")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80035190")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80035CE8")
+    tekken3_wrap_generated(func_80036CAC func_80035BC0 func_80035190 func_80035CE8)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_motion.c")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8003AD10")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80037CBC")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8006A3BC")
+    tekken3_wrap_generated(func_8003AD10 func_80037CBC func_8006A3BC)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_combat.c")
     set(JUN_COMBAT_HOOKS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_jun_combat_generated.c")
     set(JUN_PUSH_HOOKS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_jun_push_generated.c")
@@ -159,30 +170,26 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
     set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_04.c" PROPERTIES HEADER_FILE_ONLY TRUE)
     set_source_files_properties("${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}" PROPERTIES
         INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/generated")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8002F3AC" "-Wl,--wrap=func_8003F098" "-Wl,--wrap=func_8002DE24")
+    tekken3_wrap_generated(func_8002F3AC func_8003F098 func_8002DE24)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_voices.c")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80040C90"
-        "-Wl,--wrap=spu_render" "-Wl,--wrap=spu_set_host_mix_volume"
-        "-Wl,--wrap=spu_init" "-Wl,--wrap=spu_snapshot_read")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8002D178" "-Wl,--wrap=func_80038B4C" "-Wl,--wrap=func_800389C0")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8002D264" "-Wl,--wrap=func_8002E8D0")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8002E0BC")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_8002CC28" "-Wl,--wrap=func_8002CD7C")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80059890")
+    tekken3_wrap_generated(func_80040C90)
+    tekken3_wrap_runtime(spu.c spu_render spu_set_host_mix_volume spu_init spu_snapshot_read)
+    tekken3_wrap_generated(func_8002D178 func_80038B4C func_800389C0 func_8002D264 func_8002E8D0
+        func_8002E0BC func_8002CC28 func_8002CD7C func_80059890)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_selector.c")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=tekken3_outfits_input" "-Wl,--wrap=host_osd_outfit_image" "-Wl,--wrap=host_osd_draw_sdl")
+    tekken3_wrap_runtime(tekken3_outfits.c tekken3_outfits_input)
+    tekken3_wrap_runtime(host_osd.c host_osd_outfit_image host_osd_draw_sdl)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_roster.c")
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_stage.c")
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_stage_hooks.c")
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_800524EC" "-Wl,--wrap=func_80036600")
-    target_link_options(psx-runtime PRIVATE
-        "-Wl,--wrap=func_80052938" "-Wl,--wrap=func_80052940" "-Wl,--wrap=func_8004B790" "-Wl,--wrap=func_8004B928"
-        "-Wl,--wrap=func_80031BFC" "-Wl,--wrap=func_80052AD0"
-        "-Wl,--wrap=func_80052958" "-Wl,--wrap=func_80052990" "-Wl,--wrap=func_8006BF20"
-        "-Wl,--wrap=func_8003626C" "-Wl,--wrap=func_80036294" "-Wl,--wrap=func_800362C4"
-        "-Wl,--wrap=func_8003F044"
-        "-Wl,--wrap=func_800513C0" "-Wl,--wrap=func_80051464" "-Wl,--wrap=func_8005155C" "-Wl,--wrap=func_80051660"
-        "-Wl,--wrap=func_80052948")
+    tekken3_wrap_generated(func_800524EC func_80036600
+        func_80052938 func_80052940 func_8004B790 func_8004B928
+        func_80031BFC func_80052AD0
+        func_80052958 func_80052990 func_8006BF20
+        func_8003626C func_80036294 func_800362C4
+        func_8003F044
+        func_800513C0 func_80051464 func_8005155C func_80051660
+        func_80052948)
 endif()
 if(NOT TEKKEN3_JUN_EXPERIMENTAL)
     tekken3_wrap_generated(func_80031BFC)

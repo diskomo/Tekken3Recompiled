@@ -344,9 +344,24 @@ class BnsSource:
         return result
 
 
-def open_bns_source(path: Path, source_format: str = "auto") -> BnsSource:
-    """Describe a standalone BNS or locate it inside a Track 1 image."""
+def cue_data_track(path: Path) -> Path:
+    """Return the first FILE of a CUE sheet, which holds the data track."""
 
+    try:
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            words = line.strip().split('"')
+            if line.strip().upper().startswith("FILE") and len(words) >= 3:
+                return path.parent / words[1]
+    except OSError as exc:
+        raise BnsToolError(f"cannot read CUE sheet {path}: {exc}") from exc
+    raise BnsToolError(f"CUE sheet {path} names no data track")
+
+
+def open_bns_source(path: Path, source_format: str = "auto") -> BnsSource:
+    """Describe a standalone BNS or locate it inside a Track 1 image or CUE."""
+
+    if path.suffix.casefold() == ".cue":
+        path = cue_data_track(path)
     try:
         image_size = path.stat().st_size
         with path.open("rb") as handle:
