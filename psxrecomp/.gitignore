@@ -35,6 +35,9 @@ test_msvc/
 
 # Recompiler output (derivative of copyrighted Sony BIOS, regenerate locally)
 generated/
+# rabbitizer's instruction tables are upstream source, tracked as upstream does.
+!recompiler/lib/rabbitizer/include/generated/
+!recompiler/lib/rabbitizer/cplusplus/include/generated/
 
 # Release packaging artifacts
 release-stage/

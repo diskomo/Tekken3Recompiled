@@ -33,6 +33,39 @@ psxrecomp_add_game_runtime(psx-runtime
     CODEGEN_SETUP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/codegen_setup.c"
 )
 
+# Game-owned hooks replace a generated routine with __wrap_<name> and reach the
+# original as __real_<name>.  GNU-style linkers redirect the references with
+# --wrap; Apple's linker has no equivalent, so there the defining shard is
+# compiled as __real_<name> and every other source names __wrap_<name>.
+# Generated shards reach their routines only through the dispatch table, so
+# both forms redirect exactly the same references.
+file(GLOB TEKKEN3_GENERATED_SHARDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_*.c")
+function(tekken3_wrap_generated)
+    foreach(_symbol IN LISTS ARGN)
+        if(NOT APPLE)
+            target_link_options(psx-runtime PRIVATE "-Wl,--wrap=${_symbol}")
+            continue()
+        endif()
+        set(_definer "")
+        foreach(_shard IN LISTS TEKKEN3_GENERATED_SHARDS)
+            file(STRINGS "${_shard}" _definition LIMIT_COUNT 1
+                REGEX "^void ${_symbol}\\(CPUState\\* cpu\\)$")
+            if(_definition)
+                set(_definer "${_shard}")
+                break()
+            endif()
+        endforeach()
+        if(NOT _definer)
+            message(FATAL_ERROR "No generated shard defines ${_symbol}; regenerate game C")
+        endif()
+        target_compile_definitions(psx-runtime PRIVATE "${_symbol}=__wrap_${_symbol}")
+        # -U/-D follow the target definitions on the command line, so this wins.
+        set_property(SOURCE "${_definer}" APPEND PROPERTY COMPILE_OPTIONS
+            "-U${_symbol}" "-D${_symbol}=__real_${_symbol}")
+    endforeach()
+endfunction()
+
 # Game-owned visual enhancements are trusted static plugins.  Package
 # manifests can select them, but never load native code from an archive.
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_dispatch.c"
@@ -53,7 +86,7 @@ target_sources(psx-runtime PRIVATE
 
 # Tekken's game-owned pre-launch frontend uses the native mod/input/disc services.
 target_compile_definitions(psx-runtime PRIVATE TEKKEN3_LAUNCHER=1)
-target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80028CD4")
+tekken3_wrap_generated(func_80028CD4)
 target_include_directories(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_custom_command(TARGET psx-runtime POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -78,7 +111,7 @@ target_sources(psx-runtime PRIVATE "${TEKKEN3_FIGHT_CAMERA_SOURCE}")
 target_include_directories(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set_source_files_properties("${TEKKEN3_FIGHT_CAMERA_SOURCE}" PROPERTIES
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/generated")
-target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80064E10")
+tekken3_wrap_generated(func_80064E10)
 set_property(TARGET psx-runtime APPEND PROPERTY LINK_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/mods/preloaded/packages/tekken3.gameplay.all-characters/1.0.0/manifest.toml"
     "${CMAKE_CURRENT_SOURCE_DIR}/mods/preloaded/packages/tekken3.gameplay.all-characters/1.0.0/README.md"
@@ -92,6 +125,12 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/jun/Jun-TTT1-combat.
 endif()
 option(TEKKEN3_JUN_EXPERIMENTAL "Build the Jun character import" ${_tekken3_jun_default})
 if(TEKKEN3_JUN_EXPERIMENTAL)
+    if(APPLE)
+        # Jun also wraps runtime and donor symbols, which tekken3_wrap_generated
+        # cannot rename yet.
+        message(FATAL_ERROR "The Jun import is not supported on macOS yet; "
+            "configure with -DTEKKEN3_JUN_EXPERIMENTAL=OFF")
+    endif()
     target_compile_definitions(psx-runtime PRIVATE TEKKEN3_JUN_EXPERIMENTAL=1)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_mod.c")
     set(JUN_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/generated")
@@ -146,7 +185,7 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
         "-Wl,--wrap=func_80052948")
 endif()
 if(NOT TEKKEN3_JUN_EXPERIMENTAL)
-    target_link_options(psx-runtime PRIVATE "-Wl,--wrap=func_80031BFC")
+    tekken3_wrap_generated(func_80031BFC)
 endif()
 
 # A dynamic developer build can import the bundled Clang C++ runtime.  Stage it

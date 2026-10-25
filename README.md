@@ -117,6 +117,27 @@ cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build-release --target psx-runtime
 ```
 
+### macOS
+
+The hybrid reference builds and runs natively on macOS (Apple Silicon and
+Intel) with the Xcode command-line tools, CMake and Ninja
+(`brew install cmake ninja`). SDL3 is fetched automatically. Put your
+Tekken 3 USA CUE and all of its BIN tracks in `disc/`, then:
+
+```bash
+cmake -S psxrecomp/recompiler -B psxrecomp/recompiler/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build psxrecomp/recompiler/build
+python3 psxrecomp/psxrecomp_cli.py generate --project-root . --config game.toml --disc "disc/<your>.cue"
+cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DTEKKEN3_JUN_EXPERIMENTAL=OFF
+cmake --build build-release --target psx-runtime
+./build-release/Tekken_3_Recompiled --launcher --game game.toml --disc "disc/Tekken 3 (USA).cue"
+```
+
+Apple's linker has no `--wrap`, so on macOS the game hooks rename the
+generated routine at compile time instead (`tekken3_wrap_generated` in
+`CMakeLists.txt`). The Jun import, Easy Setup and the in-launcher updater are
+still Windows-only.
+
 Zip prefix for CI artifacts: `tekken3`.
 
 ## Symbols
