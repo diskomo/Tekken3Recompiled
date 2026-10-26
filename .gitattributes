@@ -1,0 +1,30 @@
+# Text is stored with LF; checkouts use the platform's line ending.
+* text=auto
+
+# Windows scripts keep CRLF on every platform.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Shell scripts keep LF, even in Windows checkouts.
+*.sh text eol=lf
+
+# Patches apply byte for byte to their upstream sources.
+*.patch -text
+
+# Binary assets.
+*.png binary
+*.gif binary
+*.tga binary
+*.tif binary
+*.ico binary
+*.jpg binary
+*.ttf binary
+*.woff binary
+*.rgba binary
+*.tim binary
+*.bin binary
+*.elf binary
+*.so binary
+*.rom binary
+*.zip binary
