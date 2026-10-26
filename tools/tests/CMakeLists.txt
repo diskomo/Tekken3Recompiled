@@ -35,7 +35,7 @@ target_compile_features(disc_library_test PRIVATE cxx_std_17)
 
 # Each imported fighter's converted combat pack, when it has been imported.
 set(TEKKEN3_PACK_BASES jun:8192 kazuya:9216 kunimitsu:10240 angel:11264 devil:12288
-    armorking:13312)
+    armorking:13312 roger:14336)
 foreach(entry IN LISTS TEKKEN3_PACK_BASES)
     string(REPLACE ":" ";" fields "${entry}")
     list(GET fields 0 key)

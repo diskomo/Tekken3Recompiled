@@ -25,8 +25,9 @@ Kunimitsu follows the same way, as character 25 with all three arcade outfits
 python3 tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
 ```
 
-Angel, Devil and Armor King follow as characters 26..28 (see their sections);
-import each the same way by name (`angel`, `devil`, `armorking`).
+Angel, Devil, Armor King and Roger follow as characters 26..29 (see their
+sections); import each the same way by name (`angel`, `devil`, `armorking`,
+`roger`).
 
 ## How a locked fighter is imported
 
@@ -210,6 +211,25 @@ accessory rows, 24..28, on parts 18..23.
   (DOCTOR B.), a four-column gap and KING. His thumbnails are 416 and 432 at
   row 96 with CLUT rows 486..488.
 
+## Roger
+
+Character 29, select ID 31 (shared with Alex), move IDs from 14336. His
+record precedes Jack-2's at `0x8001EA64`; outfit row 17 holds models 68
+(Roger) and 69, which is Alex, so his outfits are **Roger** and **Alex**. Both
+use Roger's voice profile 36: six linear-PCM samples, 248..253, at 16871 and
+6319.
+
+- **32x32 faces.** His face tiles are 32x32, not 16x64, and the arcade backs
+  them up at (176,64). The planner takes the face size from the destination
+  tile and records it in `TttFace` when it is not 16x64; expressions copy that
+  size.
+- **Textures.** 11776 and 9504 texels fit the native space untrimmed.
+- **Menu art.** Portrait 33. The name strip is R (BRYAN), O (OGRE) and GER
+  (TIGER). His thumbnails are 448 and 464 at row 96 with CLUT rows 483..485.
+
+With him the 16:9 cabinet grid is full (28 cells) and the console grid uses
+28 of 30.
+
 ## Outfit picker
 
 Every imported fighter's outfits are in the inline carousel (catalog entries
@@ -226,5 +246,7 @@ PORTRAIT.
   mirror, Kazuya against a CPU Jun, CPU Kazuya in Arcade and Survival, and
   Kunimitsu against Jin and in all-outfit mirrors were played.
 - Only Jun and Kazuya are random CPU opponents: Team Battle's candidate list
-  holds two imports, so Kunimitsu, Angel, Devil and Armor King are left out.
+  holds two imports, so Kunimitsu, Angel, Devil, Armor King and Roger are left
+  out.
+- Roger's Alex outfit uses Roger's voice samples, not Alex's profile 23.
 - Accessories are rigid (no secondary motion), as for Jun's hair and bow.

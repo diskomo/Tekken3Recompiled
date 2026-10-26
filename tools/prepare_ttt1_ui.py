@@ -50,6 +50,12 @@ FIGHTER_UI = {
                       backdrop=((72, 24, 96), (16, 4, 24)),
                       crops={'selector-tall': (28, 8, 144, 187), 'selector': (28, 14, 144, 167),
                              'loading-tall': (28, 48, 144, 138), 'loading': (28, 54, 144, 130)}),
+    'roger': dict(portrait=33, name='ROGER',
+                  # R from BRYAN, O from OGRE, GER from TIGER.
+                  pieces=[(169, 8, 17), (185, 0, 10), (221, 12, 37)],
+                  backdrop=((120, 88, 48), (28, 16, 8)),
+                  crops={'selector-tall': (24, 12, 140, 191), 'selector': (24, 18, 140, 171),
+                         'loading-tall': (24, 60, 140, 150), 'loading': (24, 66, 140, 142)}),
     'armorking': dict(portrait=0, name='ARMOR KING',
                       # AR from HWOARANG, M from KUMA, OR from DOCTOR B., KING.
                       pieces=[(121, 27, 45), (161, 16, 27), (249, 34, 51), 4, (97, 0, 31)],

@@ -394,6 +394,67 @@
           "frequency": 6695
         }
       }
+    },
+    "roger": {
+      "sound_profile": 36,
+      "group_counts": [
+        2,
+        2,
+        1,
+        1
+      ],
+      "group_ids": [
+        248,
+        252,
+        249,
+        250,
+        251,
+        253
+      ],
+      "samples": {
+        "248": {
+          "bank": 7,
+          "start": 27599,
+          "end": 37006,
+          "flags": 0,
+          "frequency": 16871
+        },
+        "249": {
+          "bank": 7,
+          "start": 37022,
+          "end": 44189,
+          "flags": 0,
+          "frequency": 16871
+        },
+        "250": {
+          "bank": 7,
+          "start": 44204,
+          "end": 49707,
+          "flags": 0,
+          "frequency": 16871
+        },
+        "251": {
+          "bank": 7,
+          "start": 49722,
+          "end": 61881,
+          "flags": 0,
+          "frequency": 16871
+        },
+        "252": {
+          "bank": 7,
+          "start": 61896,
+          "end": 64455,
+          "flags": 0,
+          "frequency": 6319
+        },
+        "253": {
+          "bank": 7,
+          "start": 64470,
+          "end": 9237,
+          "flags": 0,
+          "frequency": 6319
+        }
+      }
     }
   }
 }

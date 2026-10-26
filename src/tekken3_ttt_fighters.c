@@ -6,6 +6,7 @@
 #include "tekken3_angel_layout.h"
 #include "tekken3_devil_layout.h"
 #include "tekken3_armorking_layout.h"
+#include "tekken3_roger_layout.h"
 
 /* Arcade face table 801945D8 for models 46, 47 and 118. */
 static const TttFace jun_faces[3]={
@@ -50,4 +51,10 @@ const TttFighter tekken3_ttt_fighters[TTT_FIGHTER_COUNT]={
      .accessory_first=ARMORKING_ACCESSORY_FIRST,.accessory_last=ARMORKING_ACCESSORY_LAST,
      .parts=ARMORKING_PARTS,
      .voice_size=598756,.voice_sha="7e80b97d3401c4978ae5c7f4053e49a2d1b5aa6b230d2f566e5ea65e8b2c2c4b"},
+    {.name="Roger",.dir="roger",.env="TEKKEN3_ROGER_ASSETS",.roster_id=29,.source_key=31,.base_id=14336,
+     .outfits=ROGER_OUTFITS,.costumes=roger_costume_specs,.texture_counts=roger_texture_counts,
+     .texture_tiles=roger_texture_tiles,.faces=roger_faces,.rows=ROGER_ROWS,
+     .accessory_first=ROGER_ACCESSORY_FIRST,.accessory_last=ROGER_ACCESSORY_LAST,
+     .parts=ROGER_PARTS,
+     .voice_size=266898,.voice_sha="08e41c458646381bb6f5b2872a9d850681d425b3c9b5e9a853fd1423bdc44de3"},
 };

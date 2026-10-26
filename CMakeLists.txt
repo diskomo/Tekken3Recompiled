@@ -339,7 +339,7 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
     # Further TTT1 fighters share the import runtime; stage those exported.
     # Each entry: asset prefix, mods/ directory, arcade outfits.
     set(TTT1_IMPORTS Kazuya:kazuya:2 Kunimitsu:kunimitsu:3 Angel:angel:1 Devil:devil:2
-        ArmorKing:armorking:2)
+        ArmorKing:armorking:2 Roger:roger:2)
     foreach(TTT1_IMPORT IN LISTS TTT1_IMPORTS)
         string(REPLACE ":" ";" TTT1_FIELDS "${TTT1_IMPORT}")
         list(GET TTT1_FIELDS 0 TTT1_NAME)

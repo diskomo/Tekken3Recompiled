@@ -53,7 +53,9 @@ KUNIMITSU = Fighter('Kunimitsu', 26, 28, 31, 25, 10240, (58, 59, 115))
 ANGEL = Fighter('Angel', 27, 34, 24, 26, 11264, (67,))
 DEVIL = Fighter('Devil', 27, 29, 28, 27, 12288, (66, 110))
 ARMOR_KING = Fighter('ArmorKing', 24, 26, 25, 28, 13312, (52, 53))
-FIGHTERS = {f.key: f for f in (JUN, KAZUYA, KUNIMITSU, ANGEL, DEVIL, ARMOR_KING)}
+# Roger's record precedes Jack-2's; Alex shares his select ID 31 (moves).
+ROGER = Fighter('Roger', 31, 17, 36, 29, 14336, (68, 69))
+FIGHTERS = {f.key: f for f in (JUN, KAZUYA, KUNIMITSU, ANGEL, DEVIL, ARMOR_KING, ROGER)}
 
 
 def aliases_for(ram: bytes, select_id: int) -> bytes:
