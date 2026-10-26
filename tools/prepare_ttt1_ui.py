@@ -50,6 +50,12 @@ FIGHTER_UI = {
                       backdrop=((72, 24, 96), (16, 4, 24)),
                       crops={'selector-tall': (28, 8, 144, 187), 'selector': (28, 14, 144, 167),
                              'loading-tall': (28, 48, 144, 138), 'loading': (28, 54, 144, 130)}),
+    'angel': dict(portrait=2, name='ANGEL',
+                  # AN from ANNA, GE from TIGER, L from LAW.
+                  pieces=[(217, 0, 16), (221, 12, 27), (81, 0, 9)],
+                  backdrop=((112, 128, 168), (24, 28, 56)),
+                  crops={'selector-tall': (24, 12, 140, 191), 'selector': (24, 18, 140, 171),
+                         'loading-tall': (24, 60, 140, 150), 'loading': (24, 66, 140, 142)}),
 }
 SIZES = {'selector-tall': (44, 68), 'selector': (44, 58), 'loading-tall': (44, 34), 'loading': (44, 29)}
 

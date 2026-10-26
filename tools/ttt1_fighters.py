@@ -48,7 +48,10 @@ class Fighter:
 JUN = Fighter('Jun', 28, 30, 19, 23, 8192, (46, 47, 118), 0x102B58)
 KAZUYA = Fighter('Kazuya', 18, 19, 18, 24, 9216, (64, 65))
 KUNIMITSU = Fighter('Kunimitsu', 26, 28, 31, 25, 10240, (58, 59, 115))
-FIGHTERS = {f.key: f for f in (JUN, KAZUYA, KUNIMITSU)}
+# Angel shares Devil's select ID (moves) and outfit row; model 67 is that row's
+# fifth entry. Her own record's model ID, 34, selects her character rules.
+ANGEL = Fighter('Angel', 27, 34, 24, 26, 11264, (67,))
+FIGHTERS = {f.key: f for f in (JUN, KAZUYA, KUNIMITSU, ANGEL)}
 
 
 def aliases_for(ram: bytes, select_id: int) -> bytes:

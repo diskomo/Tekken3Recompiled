@@ -3,6 +3,7 @@
 #include "tekken3_ttt_fighter.h"
 #include "tekken3_kazuya_layout.h"
 #include "tekken3_kunimitsu_layout.h"
+#include "tekken3_angel_layout.h"
 
 /* Arcade face table 801945D8 for models 46, 47 and 118. */
 static const TttFace jun_faces[3]={
@@ -29,4 +30,10 @@ const TttFighter tekken3_ttt_fighters[TTT_FIGHTER_COUNT]={
      .accessory_first=KUNIMITSU_ACCESSORY_FIRST,.accessory_last=KUNIMITSU_ACCESSORY_LAST,
      .parts=KUNIMITSU_PARTS,
      .voice_size=367632,.voice_sha="a639af2793c4893c5d402ea28e4909be56ec01b174aca6672f352b32a05db6e4"},
+    {.name="Angel",.dir="angel",.env="TEKKEN3_ANGEL_ASSETS",.roster_id=26,.source_key=27,.base_id=11264,
+     .outfits=ANGEL_OUTFITS,.costumes=angel_costume_specs,.texture_counts=angel_texture_counts,
+     .texture_tiles=angel_texture_tiles,.faces=angel_faces,.rows=ANGEL_ROWS,
+     .accessory_first=ANGEL_ACCESSORY_FIRST,.accessory_last=ANGEL_ACCESSORY_LAST,
+     .parts=ANGEL_PARTS,
+     .voice_size=567396,.voice_sha="2cedb528e5cb9f068e96ed2f8e5e4a4536939a54b6e48e449c744082d77decac"},
 };

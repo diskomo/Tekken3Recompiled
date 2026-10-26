@@ -31,6 +31,7 @@ static const Tekken3OutfitEntry defaults[] = {
  {"kunimitsu-arcade-1","PURPLE NINJA","kunimitsu-arcade-1",25,-1,0x8000},
  {"kunimitsu-arcade-2","GOLD NINJA","kunimitsu-arcade-2",25,-1,0x4000},
  {"kunimitsu-arcade-3","PURPLE BODYSUIT","kunimitsu-arcade-3",25,-1,0x0008},
+ {"angel-arcade-1","WHITE ROBE","angel-arcade-1",26,-1,0x8000},
  {"eddy-original-1","ORIGINAL OUTFIT 1","eddy-original-1",8,-1,0x8000},
  {"eddy-original-2","ORIGINAL OUTFIT 2","eddy-original-2",8,-1,0x4000},
  {"eddy-tiger","TIGER JACKSON","eddy-tiger",8,-1,0x0008},

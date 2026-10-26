@@ -148,6 +148,7 @@ workspace/.venv-import/bin/pip install -r tools/requirements-import.txt
 workspace/.venv-import/bin/python tools/import_jun.py --ttt1 tektagt.zip --t3-arcade tekken3.zip --no-rebuild
 workspace/.venv-import/bin/python tools/import_ttt1_fighter.py kazuya --ttt1 tektagt.zip
 workspace/.venv-import/bin/python tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
+workspace/.venv-import/bin/python tools/import_ttt1_fighter.py angel --ttt1 tektagt.zip
 cmake -S . -B build-release -DTEKKEN3_JUN_EXPERIMENTAL=ON
 cmake --build build-release --target psx-runtime
 ```

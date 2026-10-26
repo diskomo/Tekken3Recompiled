@@ -25,6 +25,9 @@ Kunimitsu follows the same way, as character 25 with all three arcade outfits
 python3 tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
 ```
 
+Angel follows as character 26 (see her section); import her the same way by
+name (`angel`).
+
 ## How a locked fighter is imported
 
 Kazuya is locked on fresh arcade NVRAM, but nothing needs unlocking:
@@ -153,6 +156,19 @@ and 115), sound profile 31, select ID 26. Moves start at 10240.
 - **Not a CPU opponent.** Team Battle's candidate list holds two imports, Jun
   and Kazuya, so the roster leaves her out of the random opponent pools.
 
+## Angel
+
+Character 26, one outfit (**White Robe**, model 67). Her select record (model
+ID 34, sound profile 24) shares Devil's select ID 27, so she has Devil's move
+list under her own move IDs from 11264; model 67 is the fifth entry of
+Devil's outfit row. Her nine voice samples (758..766) play at frequency 16384.
+Her model needs 19454 texels once trimmed, so it uses the extended texture
+space, and her row 23 is a third head mesh like Kunimitsu's. Seven of her hit
+capsules reach wing limbs that SLUS-00402 lacks and sweep the remaining limb.
+Portrait 2; the name strip joins AN (ANNA), GE (TIGER) and L (LAW). Her
+thumbnails take the last pair at row 160 (480, 496) and CLUT rows 492..494.
+Like Kunimitsu, she is not a random CPU opponent.
+
 ## Outfit picker
 
 Every imported fighter's outfits are in the inline carousel (catalog entries
@@ -169,5 +185,5 @@ PORTRAIT.
   mirror, Kazuya against a CPU Jun, CPU Kazuya in Arcade and Survival, and
   Kunimitsu against Jin and in all-outfit mirrors were played.
 - Only Jun and Kazuya are random CPU opponents: Team Battle's candidate list
-  holds two imports, so Kunimitsu is left out.
+  holds two imports, so Kunimitsu and Angel are left out.
 - Accessories are rigid (no secondary motion), as for Jun's hair and bow.

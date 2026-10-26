@@ -22,7 +22,7 @@ typedef struct TttRosterEntry {
 } TttRosterEntry;
 
 /* Thumbnail scratch columns pair up in two bands, x 384..511: row 160 holds
- * Jun (384, 400), Kazuya and Kunimitsu. CLUT rows run down from Jun's
+ * Jun (384, 400), Kazuya, Kunimitsu and Angel. CLUT rows run down from Jun's
  * 501..503, three per fighter. Both are restored when menus close
  * (TTT1_FIGHTERS.md lists the slots). */
 static TttRosterEntry entries[]={
@@ -36,6 +36,11 @@ static TttRosterEntry entries[]={
         .name_sha="d79385735df8baa762a854faf4c80f22645a59f48df93bc72687fa8b1baec1c2",
         .name_width=68,.icon_x=448,.loading_x=464,.grey_row=495,.selector_row=496,.loading_row=497,
         .color=0x6b756e4b}},
+    {TTT_ANGEL,"ANGEL",{
+        .pack_sha="3ddcc5ee45df41afce8fce1c1183259bad4bbefae93876367a92fbdfe2a2cfee",
+        .name_sha="a9f4d5f2a8b623ecfaee3bfe5654ad7ba120daf469a43380daadfe78fd2403f8",
+        .name_width=40,.icon_x=480,.loading_x=496,.grey_row=492,.selector_row=493,.loading_row=494,
+        .color=0x6c65674e}},
 };
 enum { ENTRY_COUNT=sizeof entries/sizeof entries[0] };
 
