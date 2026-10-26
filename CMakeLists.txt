@@ -383,6 +383,12 @@ endif() # Full game enhancements need locally generated game code.
 # migrated system-by-system.  The PC-port target below is deliberately separate:
 # it does not compile generated guest code, OpenBIOS, the PS1 GPU/GTE, or the
 # compatibility scheduler.
+option(TEKKEN3_BUILD_TESTS "Register the offline regressions in tools/tests with CTest" ON)
+if(TEKKEN3_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tools/tests)
+endif()
+
 option(TEKKEN3_BUILD_PC_PORT "Build the independent native Tekken 3 PC port" OFF)
 if(TEKKEN3_BUILD_PC_PORT)
     add_subdirectory(native)

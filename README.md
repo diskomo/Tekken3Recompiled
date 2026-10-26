@@ -149,6 +149,20 @@ cmake -S . -B build-release -DTEKKEN3_JUN_EXPERIMENTAL=ON
 cmake --build build-release --target psx-runtime
 ```
 
+### Tests
+
+The offline regressions in `tools/tests` build with the game and run without
+booting it. Point `TEKKEN3_TEST_PYTHON` at a Python 3.11+ with
+`tools/requirements-import.txt` (such as the import venv); suites that need
+Pillow report as skipped without it. Checks of imported fighters' packs are
+added once those fighters are imported.
+
+```sh
+cmake -S . -B build-release -DTEKKEN3_TEST_PYTHON=workspace/.venv-import/bin/python
+cmake --build build-release
+ctest --test-dir build-release
+```
+
 Zip prefix for CI artifacts: `tekken3`.
 
 ## Symbols
