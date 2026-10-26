@@ -22,15 +22,20 @@ typedef struct TttRosterEntry {
 } TttRosterEntry;
 
 /* Thumbnail scratch columns pair up in two bands, x 384..511: row 160 holds
- * Jun (384, 400) and Kazuya. CLUT rows run down from Jun's 501..503, three
- * per fighter. Both are restored when menus close (TTT1_FIGHTERS.md lists
- * the slots). */
+ * Jun (384, 400), Kazuya and Kunimitsu. CLUT rows run down from Jun's
+ * 501..503, three per fighter. Both are restored when menus close
+ * (TTT1_FIGHTERS.md lists the slots). */
 static TttRosterEntry entries[]={
     {TTT_KAZUYA,"KAZUYA",{
         .pack_sha="947319f0c87670fab34df78262ad1ce1481017408327229984550017d4be9011",
         .name_sha="d86a31394f6234b059b3c8b37de0deb15ed25766ed56fee24ca05bca2959688e",
         .name_width=52,.icon_x=416,.loading_x=432,.grey_row=498,.selector_row=499,.loading_row=500,
         .color=0x6b617a75}},
+    {TTT_KUNIMITSU,"KUNIMITSU",{
+        .pack_sha="0d3f762c47249b1de473cc6b1a4ce75a38155bf269c4e544987dd131fdf50cb5",
+        .name_sha="d79385735df8baa762a854faf4c80f22645a59f48df93bc72687fa8b1baec1c2",
+        .name_width=68,.icon_x=448,.loading_x=464,.grey_row=495,.selector_row=496,.loading_row=497,
+        .color=0x6b756e4b}},
 };
 enum { ENTRY_COUNT=sizeof entries/sizeof entries[0] };
 

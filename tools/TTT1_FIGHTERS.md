@@ -17,6 +17,14 @@ the console grids (Team Battle); the 11-column cabinet grid shows him in 16:9.
 He has both arcade outfits, **Karate Pants** and **Purple Suit**, in the outfit
 picker, each with its own card art.
 
+Kunimitsu follows the same way, as character 25 with all three arcade outfits
+(**Purple Ninja**, **Gold Ninja**, **Purple Bodysuit**); see
+[Kunimitsu](#kunimitsu) for what she needed beyond Kazuya.
+
+```bash
+python3 tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
+```
+
 ## How a locked fighter is imported
 
 Kazuya is locked on fresh arcade NVRAM, but nothing needs unlocking:
@@ -91,7 +99,7 @@ and `icon_y` in its row of `src/tekken3_ttt_roster.c`, and three CLUT rows:
 |---|---|---|---|
 | Jun | 384, 400 | 160 | 501..503 |
 | Kazuya | 416, 432 | 160 | 498..500 |
-| 3rd | 448, 464 | 160 | 495..497 |
+| Kunimitsu | 448, 464 | 160 | 495..497 |
 | 4th | 480, 496 | 160 | 492..494 |
 | 5th..8th | as above | 96 | 489..491, 486..488, 483..485, 480..482 |
 
@@ -113,6 +121,38 @@ it and its import has run, a fighter needs:
    the `tekken3.<dir>-probe` and `tekken3.<dir>-roster` plugins. Both are
    registered from the tables, so no code names the fighter.
 
+## Kunimitsu
+
+Her IDs come from the select records at `0x8001EAC0`, which list after each
+name the model row, sound profile and select ID: model row 28 (models 58, 59
+and 115), sound profile 31, select ID 26. Moves start at 10240.
+
+- **Third outfit.** Model 115 is in the expansion archives, whose textures are
+  at bank offset `0x316FCAC` (`export_ttt1_fighter.texture_member`), as Jun's
+  third outfit is. A table at `0x8019E3B4` gives the model ID each expansion
+  member replaces.
+- **No face.** Her mask leaves no face-table entry (`-1`), so her layout has
+  `TTT_NO_FACE` and no expression copies. Each outfit's four 16x64 face tiles
+  are then unused; the planner drops tiles that no polygon or face uses, and
+  the runtime skips their TIM blocks. Trimmed, her outfits need 14216, 13896
+  and 15984 texels, inside the native 16384. Tile tables now hold 32 tiles.
+- **Blade limb.** One move (alias 1594) sweeps a capsule from limb 6 to arcade
+  limb 22, the blade, which SLUS-00402's skeleton lacks. The converter keeps
+  the limb 6 sweep and reports `extended_attack_limb`.
+- **Third head mesh.** The Purple Bodysuit draws arcade row 23 beside head rows
+  21 and 22. It must follow row 22 in the draw order (it copies 46 of its
+  vertices), so it takes accessory part 18 and turns with the head joint
+  (`head_mesh` in `tekken3_ttt_import.c`). Her hair rows name their parents by
+  arcade part (row = part + 6); the runtime resolves those to the parts that
+  actually hold the rows.
+- **Voices.** Profile 31 has eight samples, 213..220; the voice oracle measured
+  frequency 5965 for all of them.
+- **Menu art.** Portrait 20 (file 60). The name strip joins whole stock pieces:
+  KU from KUMA, N from NINA and IMITSU from YOSHIMITSU. Her thumbnails use menu
+  scratch columns 448 and 464 and CLUT rows 495..497.
+- **Not a CPU opponent.** Team Battle's candidate list holds two imports, Jun
+  and Kazuya, so the roster leaves her out of the random opponent pools.
+
 ## Outfit picker
 
 Every imported fighter's outfits are in the inline carousel (catalog entries
@@ -126,6 +166,8 @@ PORTRAIT.
 ## Not yet done
 
 - VS mode with two imported fighters on two pads is untested; a VS Kazuya
-  mirror, Kazuya against a CPU Jun and CPU Kazuya in Arcade and Survival were
-  played.
+  mirror, Kazuya against a CPU Jun, CPU Kazuya in Arcade and Survival, and
+  Kunimitsu against Jin and in all-outfit mirrors were played.
+- Only Jun and Kazuya are random CPU opponents: Team Battle's candidate list
+  holds two imports, so Kunimitsu is left out.
 - Accessories are rigid (no secondary motion), as for Jun's hair and bow.

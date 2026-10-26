@@ -92,6 +92,76 @@
           "flags": 8
         }
       }
+    },
+    "kunimitsu": {
+      "sound_profile": 31,
+      "group_counts": [
+        4,
+        2,
+        1,
+        1
+      ],
+      "group_ids": [
+        216,
+        217,
+        218,
+        220,
+        213,
+        214,
+        215,
+        219
+      ],
+      "frequency": 5965,
+      "samples": {
+        "213": {
+          "bank": 4,
+          "start": 53306,
+          "end": 57785,
+          "flags": 8
+        },
+        "214": {
+          "bank": 4,
+          "start": 57800,
+          "end": 61639,
+          "flags": 8
+        },
+        "215": {
+          "bank": 4,
+          "start": 61654,
+          "end": 5717,
+          "flags": 8
+        },
+        "216": {
+          "bank": 5,
+          "start": 5732,
+          "end": 8419,
+          "flags": 8
+        },
+        "217": {
+          "bank": 5,
+          "start": 8434,
+          "end": 10673,
+          "flags": 8
+        },
+        "218": {
+          "bank": 5,
+          "start": 10688,
+          "end": 14207,
+          "flags": 8
+        },
+        "219": {
+          "bank": 5,
+          "start": 14222,
+          "end": 16461,
+          "flags": 8
+        },
+        "220": {
+          "bank": 5,
+          "start": 16476,
+          "end": 21275,
+          "flags": 8
+        }
+      }
     }
   }
 }

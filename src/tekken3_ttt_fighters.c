@@ -2,6 +2,7 @@
  * coordinates of the private local packs are compiled in. */
 #include "tekken3_ttt_fighter.h"
 #include "tekken3_kazuya_layout.h"
+#include "tekken3_kunimitsu_layout.h"
 
 /* Arcade face table 801945D8 for models 46, 47 and 118. */
 static const TttFace jun_faces[3]={
@@ -22,4 +23,10 @@ const TttFighter tekken3_ttt_fighters[TTT_FIGHTER_COUNT]={
      .accessory_first=KAZUYA_ACCESSORY_FIRST,.accessory_last=KAZUYA_ACCESSORY_LAST,
      .parts=KAZUYA_PARTS,
      .voice_size=826192,.voice_sha="0ed82a63a93357c261eeed0121a18eb9e4d9e5b78b0b39934b8e6ebe22b3a7d4"},
+    {.name="Kunimitsu",.dir="kunimitsu",.env="TEKKEN3_KUNIMITSU_ASSETS",.roster_id=25,.source_key=26,.base_id=10240,
+     .outfits=KUNIMITSU_OUTFITS,.costumes=kunimitsu_costume_specs,.texture_counts=kunimitsu_texture_counts,
+     .texture_tiles=kunimitsu_texture_tiles,.faces=kunimitsu_faces,.rows=KUNIMITSU_ROWS,
+     .accessory_first=KUNIMITSU_ACCESSORY_FIRST,.accessory_last=KUNIMITSU_ACCESSORY_LAST,
+     .parts=KUNIMITSU_PARTS,
+     .voice_size=367632,.voice_sha="a639af2793c4893c5d402ea28e4909be56ec01b174aca6672f352b32a05db6e4"},
 };

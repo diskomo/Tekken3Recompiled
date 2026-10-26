@@ -47,7 +47,8 @@ class Fighter:
 
 JUN = Fighter('Jun', 28, 30, 19, 23, 8192, (46, 47, 118), 0x102B58)
 KAZUYA = Fighter('Kazuya', 18, 19, 18, 24, 9216, (64, 65))
-FIGHTERS = {f.key: f for f in (JUN, KAZUYA)}
+KUNIMITSU = Fighter('Kunimitsu', 26, 28, 31, 25, 10240, (58, 59, 115))
+FIGHTERS = {f.key: f for f in (JUN, KAZUYA, KUNIMITSU)}
 
 
 def aliases_for(ram: bytes, select_id: int) -> bytes:

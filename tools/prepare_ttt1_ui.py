@@ -44,6 +44,12 @@ FIGHTER_UI = {
                    backdrop=((112, 16, 16), (24, 4, 8)),
                    crops={'selector-tall': (24, 12, 140, 191), 'selector': (24, 18, 140, 171),
                           'loading-tall': (24, 60, 140, 150), 'loading': (24, 66, 140, 142)}),
+    'kunimitsu': dict(portrait=20, name='KUNIMITSU',
+                      # Whole stock pieces: KU from KUMA, N from NINA, IMITSU from YOSHIMITSU.
+                      pieces=[(161, 0, 16), (113, 0, 10), (105, 37, 76)],
+                      backdrop=((72, 24, 96), (16, 4, 24)),
+                      crops={'selector-tall': (28, 8, 144, 187), 'selector': (28, 14, 144, 167),
+                             'loading-tall': (28, 48, 144, 138), 'loading': (28, 54, 144, 130)}),
 }
 SIZES = {'selector-tall': (44, 68), 'selector': (44, 58), 'loading-tall': (44, 34), 'loading': (44, 29)}
 
