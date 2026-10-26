@@ -22,6 +22,7 @@ static const struct {const char *prefix,*env,*dir,*pack;} outfit_imports[]={
     {"kazuya-arcade-","TEKKEN3_KAZUYA_ASSETS","kazuya","Kazuya-TTT1-ui.jui"},
     {"kunimitsu-arcade-","TEKKEN3_KUNIMITSU_ASSETS","kunimitsu","Kunimitsu-TTT1-ui.jui"},
     {"angel-arcade-","TEKKEN3_ANGEL_ASSETS","angel","Angel-TTT1-ui.jui"},
+    {"devil-arcade-","TEKKEN3_DEVIL_ASSETS","devil","Devil-TTT1-ui.jui"},
 };
 static void outfit_import_portrait(OutfitArt *a,const char *base,unsigned fighter) {
     char path[1400];const char *override=getenv(outfit_imports[fighter].env);

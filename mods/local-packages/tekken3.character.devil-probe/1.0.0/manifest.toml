@@ -1,0 +1,28 @@
+format_version = 5
+id = "tekken3.character.devil-probe"
+version = "1.0.0"
+name = "Devil (TTT1)"
+author = "Tekken3Recomp"
+description = "Adds Devil as a separate fighter with both arcade outfits, voices, menu art and solo TTT1 combat conversion. Requires locally imported donor assets."
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SLUS-00402"
+exe_sha256 = "fbda8b68e5799dbef4af39a161783bc670c15b0aa0e87dce65e210717da19b8c"
+
+[[feature]]
+id = "devil-probe"
+name = "Devil"
+description = "Adds Devil to both character selectors with solo moves, throws and victory animations. Tag mechanics are excluded."
+group = "Characters"
+default_enabled = true
+
+[[plugin]]
+feature = "devil-probe"
+id = "tekken3.devil-probe"
+
+# Registers Devil in the shared extra roster (character 27).
+[[plugin]]
+feature = "devil-probe"
+id = "tekken3.devil-roster"

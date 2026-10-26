@@ -25,8 +25,8 @@ Kunimitsu follows the same way, as character 25 with all three arcade outfits
 python3 tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
 ```
 
-Angel follows as character 26 (see her section); import her the same way by
-name (`angel`).
+Angel and Devil follow as characters 26..27 (see their sections);
+import each the same way by name (`angel`, `devil`).
 
 ## How a locked fighter is imported
 
@@ -169,6 +169,25 @@ Portrait 2; the name strip joins AN (ANNA), GE (TIGER) and L (LAW). Her
 thumbnails take the last pair at row 160 (480, 496) and CLUT rows 492..494.
 Like Kunimitsu, she is not a random CPU opponent.
 
+## Devil
+
+Character 27, two outfits (**Purple Devil**, model 66; **Magenta Devil**, model
+110). He has Angel's select ID 27, so the same move list, under move IDs from
+12288; voice profile 28 has nine samples (612..620) at frequency 16384.
+
+- **Expansion models.** Model 110 is expansion member 7, not 8: a table of 23
+  halfwords at `0x8019E3B4` gives the model ID each expansion member replaces
+  (members 13 and 16 are Kunimitsu's 115 and Jun's 118, and some members
+  update main-archive models). `export_ttt1_fighter.py` reads it.
+- **Textures.** Trimmed, each outfit needs 18422 texels plus his face. Only the
+  face's destination tile stays in VRAM; expressions copy their two source
+  tiles from host memory, as they always have.
+- **Accessories.** His wings, tail and horns are five accessory rows, 23..27,
+  on parts 18..23, so he draws all 24 parts.
+- **Menu art.** Portrait 7. The name strip is D (DOCTOR B.), E (EDDY), a V
+  drawn in the HUD font's outline and shading, I (LEI) and L (LAW). His
+  thumbnails open the band at row 96 (384, 400) with CLUT rows 489..491.
+
 ## Outfit picker
 
 Every imported fighter's outfits are in the inline carousel (catalog entries
@@ -185,5 +204,5 @@ PORTRAIT.
   mirror, Kazuya against a CPU Jun, CPU Kazuya in Arcade and Survival, and
   Kunimitsu against Jin and in all-outfit mirrors were played.
 - Only Jun and Kazuya are random CPU opponents: Team Battle's candidate list
-  holds two imports, so Kunimitsu and Angel are left out.
+  holds two imports, so Kunimitsu, Angel and Devil are left out.
 - Accessories are rigid (no secondary motion), as for Jun's hair and bow.
