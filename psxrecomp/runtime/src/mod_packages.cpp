@@ -32,9 +32,21 @@ std::map<std::string, ModBuiltinResolver>& builtin_resolvers() {
     return value;
 }
 
+/* A plugin hook: a plain callback, or one that takes its context. */
+struct PluginHook {
+    void (*plain)(void) = nullptr;
+    void (*with)(void*) = nullptr;
+    void* context = nullptr;
+    explicit operator bool() const { return plain || with; }
+    void operator()() const {
+        if (plain) plain();
+        else if (with) with(context);
+    }
+};
+
 struct RegisteredPlugin {
-    PSXModActivationCallback activation = nullptr;
-    PSXModVBlankCallback vblank = nullptr;
+    PluginHook activation;
+    PluginHook vblank;
 };
 
 std::map<std::string, RegisteredPlugin>& registered_plugins() {
@@ -1480,7 +1492,7 @@ bool mod_register_activation_plugin(const std::string& id, void (*callback)(void
     if (!valid_id(id) || !callback) return false;
     RegisteredPlugin& plugin = registered_plugins()[id];
     if (plugin.activation) return false;
-    plugin.activation = callback;
+    plugin.activation.plain = callback;
     return true;
 }
 
@@ -1488,7 +1500,25 @@ bool mod_register_vblank_plugin(const std::string& id, void (*callback)(void)) {
     if (!valid_id(id) || !callback) return false;
     RegisteredPlugin& plugin = registered_plugins()[id];
     if (plugin.vblank) return false;
-    plugin.vblank = callback;
+    plugin.vblank.plain = callback;
+    return true;
+}
+
+bool mod_register_activation_plugin(const std::string& id, void (*callback)(void*), void* context) {
+    if (!valid_id(id) || !callback) return false;
+    RegisteredPlugin& plugin = registered_plugins()[id];
+    if (plugin.activation) return false;
+    plugin.activation.with = callback;
+    plugin.activation.context = context;
+    return true;
+}
+
+bool mod_register_vblank_plugin(const std::string& id, void (*callback)(void*), void* context) {
+    if (!valid_id(id) || !callback) return false;
+    RegisteredPlugin& plugin = registered_plugins()[id];
+    if (plugin.vblank) return false;
+    plugin.vblank.with = callback;
+    plugin.vblank.context = context;
     return true;
 }
 
@@ -3461,4 +3491,16 @@ extern "C" int psx_mod_register_activation_plugin(
     const char* id, PSXModActivationCallback callback) {
     return id &&
         PSXRecompV4::mod_register_activation_plugin(id, callback) ? 1 : 0;
+}
+
+extern "C" int psx_mod_register_activation_plugin_with(
+    const char* id, PSXModContextCallback callback, void* context) {
+    return id &&
+        PSXRecompV4::mod_register_activation_plugin(id, callback, context) ? 1 : 0;
+}
+
+extern "C" int psx_mod_register_vblank_plugin_with(
+    const char* id, PSXModContextCallback callback, void* context) {
+    return id &&
+        PSXRecompV4::mod_register_vblank_plugin(id, callback, context) ? 1 : 0;
 }

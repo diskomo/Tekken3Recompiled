@@ -45,6 +45,7 @@
 #include "crash_trace.h"
 #include "gpu_gl_renderer.h"
 #include "lockstep.h"
+#include "mod_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3590,6 +3591,32 @@ static void handle_bios_info(int id, const char *json)
              psx_bios_image.image_wordsum, memory_get_bios_checksum(),
              psx_bios_image.image_wordsum == memory_get_bios_checksum());
     debug_server_send_line(out);
+}
+
+/* mod_log — recent messages from trusted mod plugins (mod_log.c).
+ *   {"cmd":"mod_log"}            total lines logged
+ *   {"cmd":"mod_log","tail":N}   the last N lines still in the ring */
+static void json_escape_string(char *dst, size_t dst_size, const char *src);
+static void handle_mod_log(int id, const char *json)
+{
+    int tail = json_get_int(json, "tail", 0);
+    uint64_t total = mod_log_seq();
+    if (tail > (int)MOD_LOG_CAP) tail = MOD_LOG_CAP;
+    if ((uint64_t)tail > total) tail = (int)total;
+    size_t size = 128 + (size_t)tail * (MOD_LOG_LINE * 6 + 4);
+    char *out = (char *)malloc(size); if (!out) { send_err(id, "oom"); return; }
+    size_t pos = (size_t)snprintf(out, size, "{\"id\":%d,\"ok\":true,\"total\":%llu,\"lines\":[",
+                                  id, (unsigned long long)total);
+    for (uint64_t s = total - (uint64_t)tail; s < total; s++) {
+        const char *line = mod_log_line(s);
+        if (!line) continue;
+        char escaped[MOD_LOG_LINE * 6];
+        json_escape_string(escaped, sizeof escaped, line);
+        pos += (size_t)snprintf(out + pos, size - pos, "%s\"%s\"",
+                                s == total - (uint64_t)tail ? "" : ",", escaped);
+    }
+    snprintf(out + pos, size - pos, "]}\n");
+    debug_server_send_line(out); free(out);
 }
 
 /* hle_dump — query the BIOS-HLE tier's always-on call ring (bios_hle.c).
@@ -13321,6 +13348,7 @@ static const CmdEntry s_commands[] = {
     { "bioscall_dump",     handle_bioscall_dump },
     { "bios_info",         handle_bios_info },
     { "hle_dump",          handle_hle_dump },
+    { "mod_log",           handle_mod_log },
     { "card_trace_dump",   handle_card_trace_dump },
     { "card_txn_dump",     handle_card_txn_dump },
     { "card_read_summary", handle_card_read_summary },

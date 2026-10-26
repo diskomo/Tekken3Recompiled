@@ -356,6 +356,8 @@ bool mod_register_builtin_resolver(const std::string& id, ModBuiltinResolver res
 void mod_clear_builtin_resolvers_for_tests();
 bool mod_register_activation_plugin(const std::string& id, void (*callback)(void));
 bool mod_register_vblank_plugin(const std::string& id, void (*callback)(void));
+bool mod_register_activation_plugin(const std::string& id, void (*callback)(void*), void* context);
+bool mod_register_vblank_plugin(const std::string& id, void (*callback)(void*), void* context);
 bool mod_plugin_registered(const std::string& id);
 void mod_invoke_activation_plugin(const std::string& id);
 void mod_invoke_vblank_plugin(const std::string& id);

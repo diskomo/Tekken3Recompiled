@@ -20,11 +20,31 @@ extern "C" {
 int  gl_renderer_init_context(struct SDL_Window *win);
 /* Select an optional host texture pack before GL initialization. */
 void gl_renderer_set_hd_texture_pack(const char *directory);
-void gl_renderer_set_skin_texture_pack(const char *directory);
-void gl_renderer_set_xiaoyu_texture_pack(const char *directory);
-void gl_renderer_set_anna_texture_pack(const char *directory);
-void gl_renderer_set_kuma_texture_pack(const char *directory);
-void gl_renderer_set_character_texture_pack(int skin, const char *directory);
+
+/* A guarded character texture pack: <directory>/mapping.bin, holding only
+ * character-atlas records, and <directory>/<image>.rgba. Add packs before GL
+ * initialization; each takes the next of GL_HD_CHARACTER_PACKS slots. */
+enum { GL_HD_CHARACTER_PACKS = 7 };
+struct HdTextureTile;
+struct HdTextureMap;
+typedef const struct HdTextureTile *(*GlHdFindTile)(struct HdTextureMap *map,
+        const uint16_t *vram, int tx, int ty, int depth, int cx, int cy,
+        const int *us, const int *vs);
+typedef struct GlHdCharacterPack {
+    const char *label;        /* for the log */
+    const char *directory;
+    const char *image;        /* <image>.rgba */
+    const char *disable_env;  /* "0" in this variable disables the pack; may be NULL */
+    int id;                   /* passed back to the callbacks */
+    /* Whether the pack applies to textures drawn with this CLUT row; NULL: always. */
+    int (*applies)(int id, int clut_y);
+    /* Called with 1 once the pack loads, or 0 when it is incomplete; may be NULL. */
+    void (*loaded)(int id, int ok);
+    /* Replaces the default guarded tile lookup; may be NULL. */
+    GlHdFindTile find;
+} GlHdCharacterPack;
+/* Returns 1 when the pack took a slot. */
+int gl_renderer_add_character_pack(const GlHdCharacterPack *pack);
 
 /* Set the GL swap interval / vsync mode (1=vsync, 0=immediate, -1=adaptive).
  * Safe before or after context creation; applies live when a context exists. */

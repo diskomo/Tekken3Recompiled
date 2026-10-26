@@ -23,10 +23,7 @@
 #include "savestate.h"
 #include "host_osd.h"
 #include "tekken3_outfits.h"
-#include "tekken3_sound_options.h"
-#ifdef TEKKEN3_LAUNCHER
-#include "tekken3_main_menu.h"
-#endif
+#include "mod_host_hooks.h"
 #include "host_keymap.h"
 #include "overlay_capture.h"
 #include "overlay_loader.h"
@@ -6277,15 +6274,13 @@ static NetplayVblankEpilogue sdl_vblank_present_body(void) {
 
 
 static void sdl_vblank_present(void) {
-#ifdef TEKKEN3_LAUNCHER
-    if (tekken3_main_menu_quit_requested()) {
-        psx_crash_trace_set_exit_origin("main_menu_quit");
+    if (mod_quit_requested()) {
+        psx_crash_trace_set_exit_origin("mod_quit");
         shutdown_runtime();
         std::exit(0); /* atexit flushes memory cards and game options */
     }
-#endif
     tekken3_outfits_tick();
-    tekken3_sound_options_tick();
+    mod_run_frame_hooks();
     NetplayVblankEpilogue ep = sdl_vblank_present_body();
     /* Selfcheck span-end rewind: after present-body C++ RAII, before any
      * further guest progress. Longjmps on success — keeps every resim load
@@ -11500,12 +11495,11 @@ int main(int argc, char** argv) {
         memcard2_path.clear();
     }
 
-    /* Sounds uses the final save directory, including launcher changes. */
+    /* Game hooks see the final save directory, including launcher changes. */
     {
-        std::error_code sound_dir_error;
-        std::filesystem::create_directories(memcard_dir, sound_dir_error);
-        tekken3_sound_options_configure(game_id.c_str(),
-            (memcard_dir / "tekken3-sound.ini").string().c_str());
+        std::error_code save_dir_error;
+        std::filesystem::create_directories(memcard_dir, save_dir_error);
+        mod_run_game_start_hooks(game_id.c_str(), memcard_dir.string().c_str());
     }
     std::filesystem::path resolved_bios =
         resolve_bios_for_runtime(bios_path, argv[0], bios_explicit);

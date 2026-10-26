@@ -8,6 +8,8 @@ extern "C" {
 
 typedef void (*PSXModVBlankCallback)(void);
 typedef void (*PSXModActivationCallback)(void);
+/* A callback that receives the context it was registered with. */
+typedef void (*PSXModContextCallback)(void* context);
 struct CPUState;
 typedef void (*PSXModFunctionEntryCallback)(struct CPUState* cpu,
                                             uint32_t address);
@@ -21,10 +23,52 @@ int psx_mod_register_activation_plugin(const char* id,
                                        PSXModActivationCallback callback);
 int psx_mod_register_vblank_plugin(const char* id,
                                    PSXModVBlankCallback callback);
+/*
+ * As above, passing `context` to every call. One implementation can then
+ * serve several plugin ids, e.g. one per data-driven entry in a table.
+ */
+int psx_mod_register_activation_plugin_with(const char* id,
+                                            PSXModContextCallback callback,
+                                            void* context);
+int psx_mod_register_vblank_plugin_with(const char* id,
+                                        PSXModContextCallback callback,
+                                        void* context);
 int psx_mod_register_function_entry_plugin(
     const char* id, uint32_t address, PSXModFunctionEntryCallback callback);
 /* Called only from generated functions explicitly listed by the game config. */
 void psx_mod_function_entry(struct CPUState* cpu, uint32_t address);
+
+/*
+ * Host hooks. Unlike plugins, these are always on: a game registers them from
+ * a PSX_MOD_CONSTRUCTOR for behaviour its build always has.
+ *
+ * A code-entry hook runs before guest code at `address` executes from an
+ * overlay or rewritten RAM (code the generated dispatch tables do not reach).
+ * Returning nonzero skips that function: execution resumes at $ra.
+ */
+typedef int (*PSXModCodeEntryCallback)(void);
+int psx_mod_register_code_entry(uint32_t address,
+                                PSXModCodeEntryCallback callback);
+/* Every guest VBlank, before the frame is presented. */
+typedef void (*PSXModFrameCallback)(void);
+int psx_mod_register_frame_hook(PSXModFrameCallback callback);
+/* Once the game ID and its save directory (host preferences live there) are
+ * final, including any launcher changes. */
+typedef void (*PSXModGameStartCallback)(const char* game_id,
+                                        const char* save_dir);
+int psx_mod_register_game_start_hook(PSXModGameStartCallback callback);
+/* Exit cleanly at the next VBlank; memory cards and options are flushed. */
+void psx_mod_request_quit(void);
+
+/*
+ * Report a plugin message, printf-style. Lines are kept in an always-on ring
+ * the debug server's mod_log command reads, and echoed to stdout.
+ */
+void psx_mod_log(const char* format, ...)
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((format(printf, 1, 2)))
+#endif
+    ;
 
 /* Narrow guest services available to trusted plugin callbacks. */
 int psx_mod_game_started(void);

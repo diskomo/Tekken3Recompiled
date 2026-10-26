@@ -202,3 +202,16 @@ void tekken3_sound_options_tick(void) {
     if(action==2) label(save_volume() ? "SAVED" : "SAVE FAILED");
     else if(action==3) { discard_preview(); show_root(1); }
 }
+
+/* Preferences live beside the memory cards, as tekken3-sound.ini. */
+static void start(const char *game_id,const char *save_dir) {
+    char path[sizeof save_path];
+    int n=snprintf(path,sizeof path,"%s/tekken3-sound.ini",save_dir?save_dir:"");
+    tekken3_sound_options_configure(game_id,n>0 && n<(int)sizeof path ? path : NULL);
+}
+#ifndef TEKKEN3_SOUND_OPTIONS_TEST
+PSX_MOD_CONSTRUCTOR(register_sound_options) {
+    (void)psx_mod_register_game_start_hook(start);
+    (void)psx_mod_register_frame_hook(tekken3_sound_options_tick);
+}
+#endif

@@ -68,8 +68,6 @@
 #include "gpu_sw_renderer.h"
 #include "gpu_gl_renderer.h"
 #include "gpu_hd_texture_match.h"
-#include "tekken3_anna_skin_match.h"
-#include "tekken3_outfits.h"
 #include "native_wide_present_authority.h"
 #include "native_wide_hole_fill_policy.h"
 #include "host_osd.h"
@@ -384,40 +382,27 @@ static GLuint s_jun_background_tex;
 static GLuint s_jun_ground_tex;
 static GLint s_uJunBackground = -1;
 static GLint s_uJunGround = -1;
-/* Existing kinds 1..9 are the forest and seven character atlases. */
+/* Kinds 1..9 are the forest and up to seven character packs. */
 #define JUN_BACKGROUND_KIND 10
 #define JUN_GROUND_KIND 11
-#define HD_SKIN_COUNT T3_SKIN_COUNT
+/* Character packs take kinds 3..9 in the order they were added. */
+#define HD_SKIN_COUNT GL_HD_CHARACTER_PACKS
+typedef struct SkinPack {
+    GlHdCharacterPack desc;
+    char label[64], dir[1024], image[64], env[64];
+} SkinPack;
+static SkinPack s_skin[HD_SKIN_COUNT];
+static int s_skin_packs;
 static HdTextureMap s_skin_map[HD_SKIN_COUNT];
 static char s_hd_dir[1024];
-static char s_skin_dir[HD_SKIN_COUNT][1024];
 static GLuint s_hd_tex[2];
 static GLuint s_skin_tex[HD_SKIN_COUNT];
 static GLint s_uHdBackground = -1, s_uHdGround = -1;
 static GLint s_uHdSkin[HD_SKIN_COUNT] = {-1, -1, -1, -1, -1, -1, -1};
-static const char *s_skin_name[HD_SKIN_COUNT] = {"nina", "xiaoyu", "anna", "kuma", "eddy", "julia", "heihachi"};
-static const char *s_skin_label[HD_SKIN_COUNT] = {"Nina White Satin", "Xiaoyu Cherry Blossom Ribbon", "Anna Jessica Rabbit", "Kuma Polar Bear", "Eddy Monochrome", "Julia Blue", "Heihachi Tiger Coat"};
-static const char *s_skin_env[HD_SKIN_COUNT] = {"PSX_NINA_SKIN", "PSX_XIAOYU_SKIN", "PSX_ANNA_SKIN", "PSX_KUMA_SKIN", "PSX_EDDY_SKIN", "PSX_JULIA_SKIN", "PSX_HEIHACHI_SKIN"};
 static unsigned s_hd_seen;
 
 void gl_renderer_set_hd_texture_pack(const char *directory) {
     snprintf(s_hd_dir, sizeof s_hd_dir, "%s", directory ? directory : "");
-}
-
-void gl_renderer_set_skin_texture_pack(const char *directory) {
-    snprintf(s_skin_dir[0], sizeof s_skin_dir[0], "%s", directory ? directory : "");
-}
-
-void gl_renderer_set_xiaoyu_texture_pack(const char *directory) {
-    snprintf(s_skin_dir[1], sizeof s_skin_dir[1], "%s", directory ? directory : "");
-}
-
-void gl_renderer_set_anna_texture_pack(const char *directory) {
-    snprintf(s_skin_dir[2], sizeof s_skin_dir[2], "%s", directory ? directory : "");
-}
-
-void gl_renderer_set_kuma_texture_pack(const char *directory) {
-    snprintf(s_skin_dir[T3_SKIN_KUMA], sizeof s_skin_dir[T3_SKIN_KUMA], "%s", directory ? directory : "");
 }
 
 static void skin_invalidate_maps(void) {
@@ -425,9 +410,17 @@ static void skin_invalidate_maps(void) {
     for (int i = 0; i < HD_SKIN_COUNT; ++i) ++s_skin_map[i].generation;
 }
 
-void gl_renderer_set_character_texture_pack(int skin, const char *directory) {
-    if (skin < 0 || skin >= HD_SKIN_COUNT) return;
-    snprintf(s_skin_dir[skin], sizeof s_skin_dir[skin], "%s", directory ? directory : "");
+int gl_renderer_add_character_pack(const GlHdCharacterPack *pack) {
+    if (!pack || !pack->directory || !pack->image || s_skin_packs >= HD_SKIN_COUNT) return 0;
+    SkinPack *p = &s_skin[s_skin_packs++];
+    snprintf(p->label, sizeof p->label, "%s", pack->label ? pack->label : pack->image);
+    snprintf(p->dir, sizeof p->dir, "%s", pack->directory);
+    snprintf(p->image, sizeof p->image, "%s", pack->image);
+    snprintf(p->env, sizeof p->env, "%s", pack->disable_env ? pack->disable_env : "");
+    p->desc = *pack;
+    p->desc.label = p->label; p->desc.directory = p->dir;
+    p->desc.image = p->image; p->desc.disable_env = p->env[0] ? p->env : NULL;
+    return 1;
 }
 
 static GLuint hd_load_image(const char *directory, const char *name, int repeat_y) {
@@ -514,43 +507,33 @@ static void jun_background_load(void) {
     for(uint32_t i=0;i<s_jun_background_map.count;i++)
         s_jun_background_map.tiles[i].kind=i<6?JUN_BACKGROUND_KIND:JUN_GROUND_KIND;
 }
-static char s_gallery_dir[1200];
 static void skin_load_pack(void) {
-#if defined(PSX_SDL3)
-    const char *base=SDL_GetBasePath();
-#else
-    char *base=SDL_GetBasePath();
-#endif
-    snprintf(s_gallery_dir,sizeof s_gallery_dir,"%smods/outfit-menu",base?base:"");
-#if !defined(PSX_SDL3)
-    SDL_free(base);
-#endif
-    char catalog_path[1300];
-    snprintf(catalog_path,sizeof catalog_path,"%s/catalog.txt",s_gallery_dir);
-    (void)tekken3_outfits_load_catalog(catalog_path);
     for (int i = 0; i < HD_SKIN_COUNT; ++i) {
-        char path[1200]; const char *disabled = getenv(s_skin_env[i]);
         s_skin_tex[i] = 0;
-        tekken3_outfits_set_available(i, 0);
         hd_map_clear(&s_skin_map[i]);
-        if (!s_skin_dir[i][0] || (disabled && !strcmp(disabled, "0"))) continue;
-        snprintf(path, sizeof path, "%s/mapping.bin", s_skin_dir[i]);
+    }
+    for (int i = 0; i < s_skin_packs; ++i) {
+        const GlHdCharacterPack *pack = &s_skin[i].desc;
+        char path[1200]; const char *disabled = pack->disable_env ? getenv(pack->disable_env) : NULL;
+        if (disabled && !strcmp(disabled, "0")) continue;
+        snprintf(path, sizeof path, "%s/mapping.bin", pack->directory);
         if (hd_map_load(&s_skin_map[i], path)) {
             /* A character map must only contain character-atlas records. */
             int valid = 1;
             for (uint32_t k = 0; k < s_skin_map[i].count; ++k)
                 if (s_skin_map[i].tiles[k].kind != 3) valid = 0;
-            if (valid) s_skin_tex[i] = hd_load_image(s_skin_dir[i], s_skin_name[i], 0);
+            if (valid) s_skin_tex[i] = hd_load_image(pack->directory, pack->image, 0);
             if (s_skin_tex[i]) {
-                tekken3_outfits_set_available(i, 1);
                 for (uint32_t k = 0; k < s_skin_map[i].count; ++k)
                     s_skin_map[i].tiles[k].kind = (uint32_t)(3 + i);
-                fprintf(stdout, "%s skin: %u guarded costume tiles enabled\n", s_skin_label[i], s_skin_map[i].count);
+                fprintf(stdout, "%s skin: %u guarded costume tiles enabled\n", pack->label, s_skin_map[i].count);
+                if (pack->loaded) pack->loaded(pack->id, 1);
                 continue;
             }
         }
-        fprintf(stdout, "%s skin: incomplete pack at %s; using original costume\n", s_skin_label[i], s_skin_dir[i]);
+        fprintf(stdout, "%s skin: incomplete pack at %s; using original costume\n", pack->label, pack->directory);
         hd_map_clear(&s_skin_map[i]);
+        if (pack->loaded) pack->loaded(pack->id, 0);
     }
 }
 static GLuint s_blit_prog = 0, s_blit_vao = 0, s_blit_vbo = 0;
@@ -1209,8 +1192,10 @@ static const char *TEX_FS =
     "noperspective in vec2 v_uv; noperspective in vec4 v_col;\n"
     "smooth in vec2 v_uv_p; flat in int v_persp;\n"
     "noperspective in vec2 v_hd_uv; smooth in vec2 v_hd_uv_p; flat in int v_hd_kind;\n"
-    "uniform sampler2D u_hd_background; uniform sampler2D u_hd_ground; uniform sampler2D u_hd_skin; uniform sampler2D u_hd_xiaoyu; uniform sampler2D u_hd_anna; uniform sampler2D u_hd_kuma;\n"
-    "uniform sampler2D u_hd_eddy; uniform sampler2D u_hd_julia; uniform sampler2D u_hd_heihachi;\n"
+    "uniform sampler2D u_hd_background; uniform sampler2D u_hd_ground;\n"
+    "/* Character packs, kinds 3..9 (gl_renderer_add_character_pack). */\n"
+    "uniform sampler2D u_hd_char0; uniform sampler2D u_hd_char1; uniform sampler2D u_hd_char2; uniform sampler2D u_hd_char3;\n"
+    "uniform sampler2D u_hd_char4; uniform sampler2D u_hd_char5; uniform sampler2D u_hd_char6;\n"
     "uniform sampler2D u_jun_background;\n"
     "uniform sampler2D u_jun_ground;\n"
     "out vec4 frag; out vec4 blend_factor;\n"
@@ -1263,13 +1248,13 @@ static const char *TEX_FS =
     "    vec2 huv = v_persp != 0 ? v_hd_uv_p : v_hd_uv;\n"
     "    if (v_hd_kind == 1) rgb = texture(u_hd_background, huv).rgb;\n"
     "    else if (v_hd_kind == 2) rgb = texture(u_hd_ground, huv).rgb;\n"
-    "    else if (v_hd_kind == 3) rgb = texture(u_hd_skin, huv).rgb;\n"
-    "    else if (v_hd_kind == 4) rgb = texture(u_hd_xiaoyu, huv).rgb;\n"
-    "    else if (v_hd_kind == 5) rgb = texture(u_hd_anna, huv).rgb;\n"
-    "    else if (v_hd_kind == 6) rgb = texture(u_hd_kuma, huv).rgb;\n"
-    "    else if (v_hd_kind == 7) rgb = texture(u_hd_eddy, huv).rgb;\n"
-    "    else if (v_hd_kind == 8) rgb = texture(u_hd_julia, huv).rgb;\n"
-    "    else if (v_hd_kind == 9) rgb = texture(u_hd_heihachi, huv).rgb;\n"
+    "    else if (v_hd_kind == 3) rgb = texture(u_hd_char0, huv).rgb;\n"
+    "    else if (v_hd_kind == 4) rgb = texture(u_hd_char1, huv).rgb;\n"
+    "    else if (v_hd_kind == 5) rgb = texture(u_hd_char2, huv).rgb;\n"
+    "    else if (v_hd_kind == 6) rgb = texture(u_hd_char3, huv).rgb;\n"
+    "    else if (v_hd_kind == 7) rgb = texture(u_hd_char4, huv).rgb;\n"
+    "    else if (v_hd_kind == 8) rgb = texture(u_hd_char5, huv).rgb;\n"
+    "    else if (v_hd_kind == 9) rgb = texture(u_hd_char6, huv).rgb;\n"
     "    else if (v_hd_kind == 10) rgb = texture(u_jun_background, huv).rgb;\n"
     "    else rgb = texture(u_jun_ground, huv).rgb;\n"
     "  } else if (u_filter == 0) {\n"
@@ -2265,14 +2250,18 @@ static void gpu_textured_triangle(const int *xs, const int *ys,
                          clut_x, clut_y, original_us, original_vs);
         if(!hd)hd=hd_map_find(&s_jun_background_map,s_vram,base_x,base_y,depth,
                               clut_x,clut_y,original_us,original_vs);
-        for (int i = 0; i < HD_SKIN_COUNT && !hd; ++i)
-            if (tekken3_outfits_skin_enabled(i, clut_y))
-                hd = (i == 2 ? tekken3_anna_skin_find : hd_map_find)(&s_skin_map[i], s_vram, base_x, base_y, depth,
-                             clut_x, clut_y, original_us, original_vs);
+        for (int i = 0; i < s_skin_packs && !hd; ++i) {
+            const GlHdCharacterPack *pack = &s_skin[i].desc;
+            if (!s_skin_tex[i] || (pack->applies && !pack->applies(pack->id, clut_y))) continue;
+            hd = pack->find ? (const HdTextureTile *)pack->find(&s_skin_map[i], s_vram, base_x, base_y, depth,
+                                                                clut_x, clut_y, original_us, original_vs)
+                            : hd_map_find(&s_skin_map[i], s_vram, base_x, base_y, depth,
+                                          clut_x, clut_y, original_us, original_vs);
+        }
     }
     if (hd && !(s_hd_seen & (1u << hd->kind))) {
         s_hd_seen |= 1u << hd->kind;
-        fprintf(stdout, "HD textures: matched %s in game\n", hd->kind == 1 ? "forest background" : hd->kind == 2 ? "forest ground" : hd->kind == JUN_BACKGROUND_KIND ? "Jun background" : hd->kind == JUN_GROUND_KIND ? "Jun water" : s_skin_label[hd->kind - 3]);
+        fprintf(stdout, "HD textures: matched %s in game\n", hd->kind == 1 ? "forest background" : hd->kind == 2 ? "forest ground" : hd->kind == JUN_BACKGROUND_KIND ? "Jun background" : hd->kind == JUN_GROUND_KIND ? "Jun water" : s_skin[hd->kind - 3].label);
         fflush(stdout);
     }
 
@@ -2953,13 +2942,11 @@ static int init_gpu_raster(void) {
     s_uJunBackground = p_glGetUniformLocation(s_tex_prog, "u_jun_background");
     s_uJunGround = p_glGetUniformLocation(s_tex_prog, "u_jun_ground");
     s_uHdGround = p_glGetUniformLocation(s_tex_prog, "u_hd_ground");
-    s_uHdSkin[0] = p_glGetUniformLocation(s_tex_prog, "u_hd_skin");
-    s_uHdSkin[1] = p_glGetUniformLocation(s_tex_prog, "u_hd_xiaoyu");
-    s_uHdSkin[2] = p_glGetUniformLocation(s_tex_prog, "u_hd_anna");
-    s_uHdSkin[T3_SKIN_KUMA] = p_glGetUniformLocation(s_tex_prog, "u_hd_kuma");
-    s_uHdSkin[T3_SKIN_EDDY] = p_glGetUniformLocation(s_tex_prog, "u_hd_eddy");
-    s_uHdSkin[T3_SKIN_JULIA] = p_glGetUniformLocation(s_tex_prog, "u_hd_julia");
-    s_uHdSkin[T3_SKIN_HEIHACHI] = p_glGetUniformLocation(s_tex_prog, "u_hd_heihachi");
+    for (int i = 0; i < HD_SKIN_COUNT; ++i) {
+        char name[16];
+        snprintf(name, sizeof name, "u_hd_char%d", i);
+        s_uHdSkin[i] = p_glGetUniformLocation(s_tex_prog, name);
+    }
     hd_load_pack();
     jun_background_load();
     skin_load_pack();

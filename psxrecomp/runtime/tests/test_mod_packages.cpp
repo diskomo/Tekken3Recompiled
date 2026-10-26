@@ -317,6 +317,19 @@ int main() {
     mod_clear_builtin_resolvers_for_tests();
 
     mod_clear_plugins_for_tests();
+    int context_calls[2] = {};
+    auto count_call = +[](void* context) { ++*static_cast<int*>(context); };
+    check(mod_register_vblank_plugin("test.context-a", count_call, &context_calls[0]) &&
+              mod_register_vblank_plugin("test.context-b", count_call, &context_calls[1]),
+          "one context callback must serve several plugin ids");
+    check(!mod_register_vblank_plugin("test.context-a", +[]() {}),
+          "a plugin id must not take a second VBlank hook");
+    mod_invoke_vblank_plugin("test.context-b");
+    mod_invoke_vblank_plugin("test.context-b");
+    mod_invoke_vblank_plugin("test.context-a");
+    check(context_calls[0] == 1 && context_calls[1] == 2,
+          "each plugin id must receive its own registered context");
+    mod_clear_plugins_for_tests();
     check(mod_register_vblank_plugin(
               "test.vblank", +[]() {}),
           "test plugin must register");

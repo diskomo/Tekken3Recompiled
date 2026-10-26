@@ -91,15 +91,12 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_dispatch.c"
    AND NOT PSXRECOMP_FORCE_SETUP_HOST)
 target_sources(psx-runtime PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_main_menu.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_new_skin_mods.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_sound_options.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_widescreen_mod.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_fight_camera.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_forest_hd_mod.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_nina_skin_mod.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_xiaoyu_skin_mod.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_anna_skin_mod.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_anna_portrait_mod.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_kuma_skin_mod.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_character_packs.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_unlock_characters_mod.c"
 )
 

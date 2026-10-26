@@ -80,7 +80,7 @@ int tekken3_main_menu_enter(void) {
             /* Restore native indices before dispatch/attract/reinitialization,
              * preserving remembered modes and never passing 0xff to the game. */
             remove_quit(count, (unsigned)index);
-            if (quitting) { quit_requested = 1; return 1; }
+            if (quitting) { quit_requested = 1; psx_mod_request_quit(); return 1; }
         }
         return 0;
     }
@@ -113,4 +113,9 @@ void __wrap_func_80028CD4(CPUState *cpu) {
     if (cpu->pc == MENU_ENTRY && cpu->gpr[31] == 0x80028cdcu &&
         tekken3_main_menu_enter())
         cpu->pc = cpu->gpr[31];
+}
+
+/* The menu overlay can also be reached from interpreted or overlay code. */
+PSX_MOD_CONSTRUCTOR(register_main_menu) {
+    (void)psx_mod_register_code_entry(MENU_ENTRY, tekken3_main_menu_enter);
 }

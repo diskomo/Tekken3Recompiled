@@ -25,9 +25,7 @@
 
 #include "dirty_ram_interp.h"
 #include "cpu_state.h"
-#ifdef TEKKEN3_LAUNCHER
-#include "tekken3_main_menu.h"
-#endif
+#include "mod_host_hooks.h"
 #include "debug_server.h"
 #include "interrupts.h"
 #include "psx_cycles.h"
@@ -2577,12 +2575,10 @@ int psx_slice_block_impl(CPUState *cpu, uint32_t block_addr, uint32_t bcyc, int 
 }
 
 static int dirty_ram_dispatch_inner(CPUState* cpu, uint32_t addr, uint32_t stop_addr) {
-#ifdef TEKKEN3_LAUNCHER
-    if (addr == 0x800db5b4u && tekken3_main_menu_enter()) {
+    if (g_mod_code_entry_count && mod_code_entry(addr)) {
         cpu->pc = cpu->gpr[31];
         return 1;
     }
-#endif
     uint32_t phys = addr & 0x1FFFFFFFu;
     int clean_game_text_miss = 0;
 
@@ -2793,13 +2789,11 @@ static int dirty_ram_dispatch_inner(CPUState* cpu, uint32_t addr, uint32_t stop_
         }
     }
     for (int i = 0; i < MAX_INSNS_PER_DISPATCH; i++) {
-#ifdef TEKKEN3_LAUNCHER
-        /* A dirty caller can reach the menu without returning to dispatch. */
-        if (pc == 0x800db5b4u && tekken3_main_menu_enter()) {
+        /* A dirty caller can reach a hooked entry without returning to dispatch. */
+        if (g_mod_code_entry_count && mod_code_entry(pc)) {
             cpu->pc = cpu->gpr[31];
             OV_FPLOG_RET1();
         }
-#endif
         uint32_t next_pc = 0;
 #ifndef PSX_NO_DEBUG_TOOLS
         /* Interp-path cycle ruler: make every interpreted PC anchorable by

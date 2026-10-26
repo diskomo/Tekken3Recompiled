@@ -72,8 +72,8 @@ def main():
         def uf(name,val):proc('glUniform1f',None,I,F)(loc(program,name.encode()),val)
         for name,val in [('u_xhalf',32),('u_xscale',1)]:uf(name,val)
         ui('u_semipass',0);ui('u_semimode',-1)
-        samplers=['u_vram','u_hd_background','u_hd_ground','u_hd_skin','u_hd_xiaoyu',
-                  'u_hd_anna','u_hd_kuma','u_hd_eddy','u_hd_julia','u_hd_heihachi',
+        samplers=['u_vram','u_hd_background','u_hd_ground',
+                  *[f'u_hd_char{i}' for i in range(7)],
                   'u_jun_background','u_jun_ground']
         gen=proc('glGenTextures',None,I,c.POINTER(U));bind=proc('glBindTexture',None,U,U)
         tex=proc('glTexImage2D',None,U,I,I,I,I,I,U,U,P)

@@ -1,7 +1,5 @@
 #include "overlay_loader.h"
-#ifdef TEKKEN3_LAUNCHER
-#include "tekken3_main_menu.h"
-#endif
+#include "mod_host_hooks.h"
 #include "overlay_api.h"
 #include "overlay_path_canon.h"
 #include "code_provider.h"
@@ -3579,13 +3577,11 @@ static int overlay_find_by_range(uint32_t phys) {
 }
 
 int overlay_loader_dispatch(CPUState *cpu, uint32_t addr) {
-#ifdef TEKKEN3_LAUNCHER
-    /* Prepare before matching cached code: relocation invalidates stock code. */
-    if (addr == 0x800db5b4u && tekken3_main_menu_enter()) {
+    /* Hooks run before matching cached code: they may relocate stock code. */
+    if (g_mod_code_entry_count && mod_code_entry(addr)) {
         cpu->pc = cpu->gpr[31];
         return 1;
     }
-#endif
     uint32_t phys = addr & 0x1FFFFFFFu;
     /* Overlay dispatch is a no-op when the overlay loader is inactive
      * (overlay_cache=false): there are no candidates to match, so this must

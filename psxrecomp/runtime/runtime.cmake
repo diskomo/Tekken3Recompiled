@@ -232,7 +232,6 @@ set(PSXRECOMP_RUNTIME_SOURCES
     ${PSXRECOMP_ROOT}/runtime/src/tekken3_selector_layout.c
     ${PSXRECOMP_ROOT}/runtime/src/tekken3_force_background.c
     ${PSXRECOMP_ROOT}/runtime/src/tekken3_outfits.c
-    ${PSXRECOMP_ROOT}/runtime/src/tekken3_sound_options.c
     ${PSXRECOMP_ROOT}/runtime/src/ws_aspect_cone_math.c
     ${PSXRECOMP_ROOT}/runtime/src/gpu_sw_renderer.c
     ${PSXRECOMP_ROOT}/runtime/src/gpu_vram_dirty.c
@@ -307,6 +306,8 @@ set(PSXRECOMP_RUNTIME_SOURCES
     ${PSXRECOMP_ROOT}/runtime/src/event_ring.c
     ${PSXRECOMP_ROOT}/runtime/src/game_options.c
     ${PSXRECOMP_ROOT}/runtime/src/mod_builtin_speed.c
+    ${PSXRECOMP_ROOT}/runtime/src/mod_log.c
+    ${PSXRECOMP_ROOT}/runtime/src/mod_host_hooks.c
     ${PSXRECOMP_ROOT}/runtime/src/mod_packages.cpp
     ${PSXRECOMP_ROOT}/runtime/src/mod_runtime.cpp
     ${PSXRECOMP_ROOT}/runtime/src/psx_keybinds.c

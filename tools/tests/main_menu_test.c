@@ -21,6 +21,13 @@ void psx_mod_write_byte(uint32_t a, uint8_t v) { *at(a) = v; }
 void psx_mod_write_word(uint32_t a, uint32_t v) { memcpy(at(a), &v, 4); }
 void psx_mod_write_code_word(uint32_t a, uint32_t v) { psx_mod_write_word(a, v); }
 int psx_mod_game_started(void) { return started; }
+static PSXModCodeEntryCallback code_entry;
+static uint32_t code_entry_address;
+static int quit_calls;
+int psx_mod_register_code_entry(uint32_t a, PSXModCodeEntryCallback c) {
+    code_entry_address = a; code_entry = c; return 1;
+}
+void psx_mod_request_quit(void) { quit_calls++; }
 uint32_t psx_mod_alloc_guest_memory(uint32_t size, uint32_t align) {
     assert(size == 256 && align == 16); ++allocations;
     return allocation_failure ? 0 : base;
@@ -57,6 +64,8 @@ static void native_init(unsigned count) {
     psx_mod_write_word(0x800ae224, 1);
 }
 int main(void) {
+    /* Overlay and interpreted callers reach the same hook. */
+    assert(code_entry == tekken3_main_menu_enter && code_entry_address == 0x800db5b4u);
     memset(ram, 0, sizeof ram);
     memset(at(0x800ec018), 0xab, 32); /* neighbour of original allocation */
     stock_code();
@@ -109,7 +118,7 @@ int main(void) {
     interpreted = 1; /* Quit must also intercept the dirty/cached overlay. */
     psx_mod_write_word(0x800ae224, 2);
     assert(step().pc == 0x80028cdcu); /* host Quit bypasses native mode dispatch */
-    assert(tekken3_main_menu_quit_requested());
+    assert(tekken3_main_menu_quit_requested() && quit_calls == 1);
     assert(step().pc == 0x80028cdcu); /* remain stopped until host shutdown */
     assert(psx_mod_read_byte(0x80097f40) == 0);
     for (unsigned i = 0; i < 32; ++i) assert(*at(0x800ec018+i) == 0xab);

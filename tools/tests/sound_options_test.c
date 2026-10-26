@@ -6,7 +6,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "../src/tekken3_sound_options.c"
+#define TEKKEN3_SOUND_OPTIONS_TEST
+#include "../../src/tekken3_sound_options.c"
 static unsigned char ram[2*1024*1024], expansion[1024];
 static int heard_music,heard_sfx;
 static unsigned char *ptr(uint32_t p) {
