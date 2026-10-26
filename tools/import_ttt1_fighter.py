@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import a further TTT1 fighter from the local Jun import.
+"""Import a further TTT1 fighter (currently Kazuya) from the local Jun import.
 
 Run tools/import_jun.py first: it verifies the arcade ROMs and captures the
 shared Jun and Jin tables this importer reuses. A fresh, muted MAME run then

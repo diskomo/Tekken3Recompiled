@@ -1,6 +1,7 @@
 /* The TTT1 fighters this build can import. Only sizes, hashes and layout
  * coordinates of the private local packs are compiled in. */
 #include "tekken3_ttt_fighter.h"
+#include "tekken3_kazuya_layout.h"
 
 /* Arcade face table 801945D8 for models 46, 47 and 118. */
 static const TttFace jun_faces[3]={
@@ -15,4 +16,10 @@ const TttFighter tekken3_ttt_fighters[TTT_FIGHTER_COUNT]={
      .rows={0,1,3,4,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,29},
      .accessory_first=19,.accessory_last=22,.parts=22,
      .voice_size=527148,.voice_sha="a83562e4efd6d6d0db0e23ed8a7a6cb4cb5972e74fad66d873d3122ef81a0be3"},
+    {.name="Kazuya",.dir="kazuya",.env="TEKKEN3_KAZUYA_ASSETS",.roster_id=24,.source_key=18,.base_id=9216,
+     .outfits=KAZUYA_OUTFITS,.costumes=kazuya_costume_specs,.texture_counts=kazuya_texture_counts,
+     .texture_tiles=kazuya_texture_tiles,.faces=kazuya_faces,.rows=KAZUYA_ROWS,
+     .accessory_first=KAZUYA_ACCESSORY_FIRST,.accessory_last=KAZUYA_ACCESSORY_LAST,
+     .parts=KAZUYA_PARTS,
+     .voice_size=826192,.voice_sha="0ed82a63a93357c261eeed0121a18eb9e4d9e5b78b0b39934b8e6ebe22b3a7d4"},
 };

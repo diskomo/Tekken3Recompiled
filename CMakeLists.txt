@@ -155,6 +155,7 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
         "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_parts07_generated.c")
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_import.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_fighters.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_roster.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_ui.c")
     set(JUN_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/generated")
     if(NOT EXISTS "${JUN_GENERATED_DIR}/jun-render.exe_full_00.c")
@@ -337,7 +338,7 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
         VERBATIM)
     # Further TTT1 fighters share the import runtime; stage those exported.
     # Each entry: asset prefix, mods/ directory, arcade outfits.
-    set(TTT1_IMPORTS)
+    set(TTT1_IMPORTS Kazuya:kazuya:2)
     foreach(TTT1_IMPORT IN LISTS TTT1_IMPORTS)
         string(REPLACE ":" ";" TTT1_FIELDS "${TTT1_IMPORT}")
         list(GET TTT1_FIELDS 0 TTT1_NAME)

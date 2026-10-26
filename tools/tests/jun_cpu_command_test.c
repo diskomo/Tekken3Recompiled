@@ -3,7 +3,7 @@
 #include <stdio.h>
 typedef struct {uint32_t gpr[32],pc;} CPUState;
 static int loaded=1,real_calls;
-/* Two imported fighters (23, 24), each with its own patterns and per-player tables. */
+/* Jun (23) and Kazuya (24), each with its own patterns and per-player tables. */
 typedef struct {uint32_t native_base,alias_table;} PlayerCombat;
 typedef struct {PlayerCombat players[2];uint32_t patterns[3];unsigned pattern_count;} FighterCombat;
 static FighterCombat fighters[2]={
@@ -59,6 +59,6 @@ int main(void) {
             assert(cache_values[0]==fc->players[p].alias_table && cache_values[1]==cache_values[0]);
         }
     }
-    puts("Production CPU command wrapper: two fighters, P1/P2, bounds, disabled/uninstalled and opponent isolation passed");
+    puts("Production CPU command wrapper: Jun/Kazuya, P1/P2, bounds, disabled/uninstalled and opponent isolation passed");
     puts("Production CPU alias-cache refresh: both actor slots, CPU indices and stock/disabled-index isolation passed");
 }

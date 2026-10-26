@@ -32,13 +32,14 @@ Jun is the top-right tile in the cabinet selector and the last tile in Team Batt
 
 `tekken3_roster_cpu.h` applies signature-guarded patches to BNS record 5's
 Arcade/Time Attack, Team Battle, and Survival generators. The shared roster
-passes it the bits of its imported fighters (Jun's 23) without
+passes it the bits of its imported fighters (Jun's 23, Kazuya's 24) without
 enabling IDs 21 (Force enemies) or 22 (empty). Arcade's first four stock-roster
 matches and final Heihachi/Jin + Ogre progression are retained; imports are
 eligible in the remaining random matches. Survival includes them in every
 progression tier. BNS record 0's new-run reset loops cover one counter per ID
-up to the highest pooled one; with Jun, Team counters end at +A3 and
-Survival's at +8F, below Arcade's opponent route (+90..BC). Team Battle gathers candidates in 22 stack slots, so at most two imports
+up to the highest pooled one; with Kazuya, Team counters end at +A5 and
+Survival's at +91, inside Arcade's opponent route (+90..BC), which neither mode
+uses. Team Battle gathers candidates in 22 stack slots, so at most two imports
 join the pools. The same-address Force overlay is deliberately untouched.
 
 The 12-byte per-character CPU parameters at 80098260 are extended privately;
@@ -114,7 +115,7 @@ Direct cabinet selection uses **punch** for outfit 1, **kick** for outfit 2, and
 
 The importer extracts verified arcade models **46, 47 and 118**, with 26, 22 and 28 texture tiles and 168, 164 and 172 relocations. The expansion archive begins at model ID 102, so model 118 is member 16. `tools/data/jun_costumes.json` records source offsets, hashes and relocation maps. `tools/capture_jun_costumes.lua` can reproduce the relocation audit using a fresh MAME run and `JUN_CAPTURE_OUTFIT=1`, `2` or `3`.
 
-Expressions now use each outfit's own face destination from the arcade face table (`0x801945D8`): (16,64) for outfit 1, (16,0) for outfit 2 and (48,0) for outfit 3. Earlier builds used outfit 1's position for all three, pasting the face over another texture in outfits 2 and 3. The runtime is shared by every imported TTT1 fighter (`src/tekken3_ttt_fighters.c`); arcade model rows are copied whole from +16, which for Jun only leaves the donor's end-of-table row intact.
+Expressions now use each outfit's own face destination from the arcade face table (`0x801945D8`): (16,64) for outfit 1, (16,0) for outfit 2 and (48,0) for outfit 3. Earlier builds used outfit 1's position for all three, pasting the face over another texture in outfits 2 and 3. The runtime is shared with further TTT1 fighters (`TTT1_FIGHTERS.md`); arcade model rows are copied whole from +16, which for Jun only leaves the donor's end-of-table row intact.
 
 Each outfit has a distinct native model cache ID. Both players retain their own packets, textures and combat state in mixed-outfit mirrors. Optional hair/bow/belt pieces follow the source model's presence, rest rotation and attachment parent. The native facial-copy table is extended with disabled entries for these models because Jun's own imported events upload her expressions; this prevents out-of-range native copies into faces or fonts.
 

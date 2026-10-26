@@ -520,6 +520,8 @@ void tekken3_ttt_tick(void) {
         if(assets[f].guest)any=1;
     }
     if(assets[TTT_JUN].guest)tekken3_jun_selector_tick();
+    for(unsigned f=TTT_JUN+1;f<TTT_FIGHTER_COUNT;f++)
+        if(assets[f].guest)tekken3_ttt_roster_tick(f);
     /* Roster fights enable the import when either player picked one. */
     if(any && tekken3_roster_live() && psx_mod_read_word(T3_SCREEN)==T3_SCREEN_FIGHT) {
         int selected=0;

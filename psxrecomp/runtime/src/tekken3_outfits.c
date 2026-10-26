@@ -26,6 +26,8 @@ static const Tekken3OutfitEntry defaults[] = {
  {"jun-arcade-1","BLUE DENIM","jun-arcade-1",23,-1,0x8000},
  {"jun-arcade-2","WHITE WAISTCOAT","jun-arcade-2",23,-1,0x4000},
  {"jun-arcade-3","KARATE GI","jun-arcade-3",23,-1,0x0008},
+ {"kazuya-arcade-1","KARATE PANTS","kazuya-arcade-1",24,-1,0x8000},
+ {"kazuya-arcade-2","PURPLE SUIT","kazuya-arcade-2",24,-1,0x4000},
  {"eddy-original-1","ORIGINAL OUTFIT 1","eddy-original-1",8,-1,0x8000},
  {"eddy-original-2","ORIGINAL OUTFIT 2","eddy-original-2",8,-1,0x4000},
  {"eddy-tiger","TIGER JACKSON","eddy-tiger",8,-1,0x0008},

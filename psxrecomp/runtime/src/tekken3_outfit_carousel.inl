@@ -19,6 +19,7 @@ static uint32_t outfit_u32(const unsigned char *p){return outfit_u16(p)|(uint32_
 /* Imported fighters without outfit art show their private select portrait. */
 static const struct {const char *prefix,*env,*dir,*pack;} outfit_imports[]={
     {"jun-arcade-","TEKKEN3_JUN_ASSETS","jun","Jun-T3-ui.jui"},
+    {"kazuya-arcade-","TEKKEN3_KAZUYA_ASSETS","kazuya","Kazuya-TTT1-ui.jui"},
 };
 static void outfit_import_portrait(OutfitArt *a,const char *base,unsigned fighter) {
     char path[1400];const char *override=getenv(outfit_imports[fighter].env);

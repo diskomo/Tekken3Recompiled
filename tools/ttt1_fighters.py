@@ -4,7 +4,7 @@ IDs come from the arcade's own tables, recovered from local MAME captures:
 select_id indexes the move-index tables at 0x80093780 and the cancel/hit
 character rules; model_index is the select record's second ID (the outfit
 lookup row at 0x8001110C); sound_profile indexes the voice profiles at
-0x80011E1C. The select records
+0x80011E1C. Devil and Kazuya share profile 18's samples. The select records
 at 0x8001EAC0 list, after each name, model_index, sound_profile and select_id.
 """
 from __future__ import annotations
@@ -46,7 +46,8 @@ class Fighter:
 
 
 JUN = Fighter('Jun', 28, 30, 19, 23, 8192, (46, 47, 118), 0x102B58)
-FIGHTERS = {f.key: f for f in (JUN,)}
+KAZUYA = Fighter('Kazuya', 18, 19, 18, 24, 9216, (64, 65))
+FIGHTERS = {f.key: f for f in (JUN, KAZUYA)}
 
 
 def aliases_for(ram: bytes, select_id: int) -> bytes:

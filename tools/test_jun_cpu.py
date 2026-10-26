@@ -1,4 +1,5 @@
-"""Offline execution of original PS1 opponent/AI routines plus production patches.
+"""Offline execution of original PS1 opponent/AI routines plus production patches,
+with Jun (23) and Kazuya (24) in the CPU opponent pools.
 
 Requires the local USA disc and `pip install unicorn`. Does not run the game,
 load a save state, or change disc/save files. Artifacts go under build-release.
@@ -86,26 +87,26 @@ def main():
         m=Machine(patched[0]);m.write(MODE,bytes([0xa5])*0xc0)
         m.u.reg_write(UC_MIPS_REG_S1,MODE)
         m.call(start,end=end)
-        assert m.read(MODE+offset,48)==bytes(48)
-        assert m.read(MODE+offset+48,4)==bytes([0xa5])*4
+        assert m.read(MODE+offset,50)==bytes(50)
+        assert m.read(MODE+offset+50,4)==bytes([0xa5])*4
     # Arcade/Time Attack preserve final bosses, exclusions, valid outfits.
     for mode in (0,3):
-        seen=0
+        seen={23:0,24:0}
         m=Machine(patched[5],mode)
         for seed in range(256):
-            player=([*range(21),23][seed%22])*4+(seed%4)
-            m.w(MODE,mode);m.w(0x80097ef0,0x009fffff)
+            player=([*range(21),23,24][seed%23])*4+(seed%4)
+            m.w(MODE,mode);m.w(0x80097ef0,0x019fffff)
             m.call(0x800b1fcc,0x801e0000,player)
             route=m.read(0x801e0000,40)
             chars=tuple(route[::4])
             assert len(set(chars[:8]))==8 and player//4 not in chars[:8],chars
             assert chars[8:]==((9 if player//4==13 else 13),14),chars
-            assert all(c in range(21) or c==23 for c in chars),chars
+            assert all(c in range(21) or c in (23,24) for c in chars),chars
             assert all(o<=1 for o in route[1::4]),route
             assert tuple(route[2::4])==tuple(range(10)),route
-            seen+=23 in chars
-        assert seen>0
-        print(f'mode {mode}: Jun selected in {seen}/256 routes; bosses/identity/exclusions intact')
+            for c in seen:seen[c]+=c in chars
+        assert all(seen.values()),seen
+        print(f'mode {mode}: Jun selected in {seen[23]}/256 routes, Kazuya in {seen[24]}; bosses/identity/exclusions intact')
     # Survival includes Jun from the first fight, respecting all four recent IDs.
     for stage in range(64):
         # Compare the exact candidate mask before RNG/recent-opponent filtering.
@@ -116,7 +117,7 @@ def main():
             machine.w(0x800b2720,0x03e00008) # return after building pool
             machine.w(0x800b2724,0)
             machine.call(0x800b26d0,MODE)
-        assert m.u.reg_read(UC_MIPS_REG_T0)==baseline.u.reg_read(UC_MIPS_REG_T0)|(1<<23)
+        assert m.u.reg_read(UC_MIPS_REG_T0)==baseline.u.reg_read(UC_MIPS_REG_T0)|(3<<23)
         assert m.u.reg_read(UC_MIPS_REG_S0)==0
     for stage in (0,6,7,16,17,50):
         m=Machine(patched[5],stage);seen=set()
@@ -124,36 +125,42 @@ def main():
             m.write(MODE,bytes(0xc0));m.w(MODE,4);m.w(MODE+0x24,stage)
             for i in range(4):m.w(MODE+0x50+i*4,22)
             m.call(0x800b26d0,MODE);seen.add(m.value(MODE+0x48)//4)
-        assert 23 in seen and not seen&{21,22},(stage,seen)
-        for i in range(4):m.w(MODE+0x50+i*4,(23,0,1,2)[i])
-        m.call(0x800b26d0,MODE)
-        assert m.value(MODE+0x48)//4 not in (23,0,1,2)
-    print('Survival: Jun eligible at all progression tiers; recent-opponent exclusions intact')
-    m=Machine(patched[5]);m.write(MODE,bytes(0xc0));m.h(MODE+0x60+23*2,2)
-    m.u.reg_write(UC_MIPS_REG_S1,MODE);m.u.reg_write(UC_MIPS_REG_S2,23)
-    m.call(0x800b1690,end=0x800b16d4)
-    assert int.from_bytes(m.read(MODE+0x60+23*2,2),'little')==3
-    assert m.u.reg_read(UC_MIPS_REG_A2)==3
+        assert {23,24}<=seen and not seen&{21,22},(stage,seen)
+        for recent in ((23,0,1,2),(24,23,1,2)):
+            for i in range(4):m.w(MODE+0x50+i*4,recent[i])
+            m.call(0x800b26d0,MODE)
+            assert m.value(MODE+0x48)//4 not in recent
+    print('Survival: Jun and Kazuya eligible at all progression tiers; recent-opponent exclusions intact')
+    for fighter in (23,24):
+        m=Machine(patched[5]);m.write(MODE,bytes(0xc0));m.h(MODE+0x60+fighter*2,2)
+        m.u.reg_write(UC_MIPS_REG_S1,MODE);m.u.reg_write(UC_MIPS_REG_S2,fighter)
+        m.call(0x800b1690,end=0x800b16d4)
+        assert int.from_bytes(m.read(MODE+0x60+fighter*2,2),'little')==3
+        assert m.u.reg_read(UC_MIPS_REG_A2)==3
     # Team generator fills CPU teams through the original weighted selection.
     m=Machine(patched[5],123);seen=set()
     for trial in range(128):
-        m.write(MODE,bytes(0xc0));m.w(MODE,2);m.w(0x80097ef0,0x009fffff)
+        m.write(MODE,bytes(0xc0));m.w(MODE,2);m.w(0x80097ef0,0x019fffff)
         team=MODE+0x59;other=MODE+0x66
         m.b(team+12,4);m.b(other+12,4)
         m.call(0x800b225c,0,team,other)
         count=m.read(team+12,1)[0];chars=[x//4 for x in m.read(team,count)]
         assert count==4 and len(set(chars))==4 and not set(chars)&{21,22},chars
         seen.update(chars)
-    assert 23 in seen
-    for human in (0,1):
-        for size in (1,4,8):
-            for trial in range(16):
-                m.write(MODE,bytes(0xc0));m.w(MODE,2);m.w(0x80097ef0,0x009fffff)
-                m.b(team,92);m.b(team+10,1);m.b(team+12,size);m.b(other+12,size)
-                m.call(0x800b225c,human,team,other)
-                chars=[x//4 for x in m.read(team,size)]
-                assert chars[0]==23 and len(set(chars))==size and not set(chars)&{21,22}
-    print('Team Battle: valid distinct CPU teams include Jun')
+    assert {23,24}<=seen
+    for fighter in (23,24):
+        for human in (0,1):
+            for size in (1,4,8):
+                for trial in range(16):
+                    m.write(MODE,bytes(0xc0));m.w(MODE,2);m.w(0x80097ef0,0x019fffff)
+                    m.b(team,fighter*4);m.b(team+10,1);m.b(team+12,size);m.b(other+12,size)
+                    m.call(0x800b225c,human,team,other)
+                    chars=[x//4 for x in m.read(team,size)]
+                    assert chars[0]==fighter and len(set(chars))==size and not set(chars)&{21,22}
+    # Counters for the highest pooled ID stay inside the Team union.
+    m.write(MODE,bytes(0xc0));m.w(MODE,2);m.b(team,96);m.b(team+12,1);m.b(other+12,1)
+    m.call(0x800b225c,1,team,other)
+    print('Team Battle: valid distinct CPU teams include Jun and Kazuya')
     # All native difficulty/progression combinations, both actor orientations.
     signatures=set()
     for difficulty in range(3):
@@ -163,7 +170,7 @@ def main():
             baseline.h(0x800ae208,difficulty);baseline.b(0x800ae211,level)
             baseline.call(0x80061488,0x8009f318,0,0,0)
             native_state=baseline.read(0x8009f318,0x330)
-            for own,opponent in ((23,9),(9,23),(23,23)):
+            for own,opponent in ((23,9),(9,23),(23,23),(24,9),(9,24),(24,23),(24,24)):
                 m=Machine(patched[5]);m.w(0x800afa5c,0x800a9228);m.w(0x800a867c,0x800aaab4)
                 # The roster's extended tuning table: stock rows, then Jin's
                 # for the sentinel and every added fighter.
@@ -178,54 +185,59 @@ def main():
                 assert state[0x320:0x32c]==state[0x314:0x320]
                 signatures.add(state[0x238:0x2a6])
     assert len(signatures)>1
-    print(f'90 CPU profile initializations passed; {len(signatures)} distinct native difficulty/progression profiles retained')
+    print(f'210 CPU profile initializations passed; {len(signatures)} distinct native difficulty/progression profiles retained')
     # Feed every real imported pattern through native command synthesis.
     # The host lookup itself is compiled/tested above; only that lookup is
     # replaced here so the unmodified PS1 consumer runs against the asset.
-    pack=(ROOT/'workspace/jun-import/jun/Jun-TTT1-combat.jmv').read_bytes()
-    record_count=struct.unpack_from('<I',pack,12)[0];records=struct.unpack_from('<I',pack,28)[0]
-    commands=set()
-    for i in range(record_count):
-        cancel=struct.unpack_from('<I',pack,records+i*56+12)[0]
-        for j in range(1024):
-            cmd=struct.unpack_from('<H',pack,cancel+j*12)[0]
-            if cmd==0xc000:break
-            commands.add(cmd)
-        else:raise AssertionError('Unterminated cancel list')
-    m=Machine(patched[5])
-    for cmd in commands:
-        result=m.call(0x800618c0,0x8009f318,cmd,0x80450000)
-        if cmd&0xc000:
-            assert result==0xffffffff,hex(cmd)
-        else:
-            direction_mask=(cmd>>5)&0x1ff
-            index=next((i for i in range(9,0,-1) if int.from_bytes(m.read(0x8002303c+i*2,2),'little')&direction_mask),0)
-            expected=int.from_bytes(m.read(0x80023050+index*2,2),'little')
-            for i in range(4):
-                if cmd&(1<<i):expected|=int.from_bytes(m.read(0x80023064+i*2,2),'little')
-            assert result==expected,(hex(cmd),result,expected)
-    print(f'All {len(commands)} actual Jun command IDs resolve in native CPU input synthesis')
-    ro,rn=struct.unpack_from('<II',pack,20);cursor=ro+rn*4
-    pattern_count=struct.unpack_from('<I',pack,cursor)[0];cursor+=4
-    m=Machine(patched[5]);lookup={};sequences={};pointer=0x80440000
-    for i in range(pattern_count):
-        cmd,n=struct.unpack_from('<HH',pack,cursor);cursor+=4
-        seq=pack[cursor:cursor+n*2];cursor+=n*2
-        assert cmd==0xe000+i and 3<=n<=65 and seq[-2:]==bytes(2)
-        m.write(pointer,seq);lookup[cmd]=pointer;sequences[cmd]=struct.unpack('<'+'H'*n,seq);pointer+=n*2
-    # Keep non-vacuous extended-format coverage even for a pack with no E000s.
-    for i,seq in enumerate(((12,0x106,0),(20,6,5,0x206,0),(30,2,3,0x409,0))):
-        cmd=0xe400+i;m.write(pointer,struct.pack('<'+'H'*len(seq),*seq));lookup[cmd]=pointer;sequences[cmd]=seq;pointer+=len(seq)*2
-    m.stub(0x8002cd7c,lambda:lookup.get(m.u.reg_read(UC_MIPS_REG_A0),0))
-    for cmd,seq in sequences.items():
-        state=0x8009f318;m.write(state,bytes(0x330))
-        assert m.call(0x800618c0,state,cmd,0x80450000)==0xffffffff
-        direction=int.from_bytes(m.read(0x8002301c+(seq[1]&15)*2,2),'little')
-        buttons=sum(bit for src,bit in ((0x100,0x80),(0x200,0x10),(0x400,0x40),(0x800,0x20)) if seq[1]&src)
-        assert int.from_bytes(m.read(state+4,2),'little')==direction|buttons
-        assert m.value(state+8)==(lookup[cmd]+4 if seq[2] else 0)
-        assert m.value(state+0x5c)==0x80450000
-    print(f'Extended input format: {pattern_count} asset sequences + 3 synthetic sequences accepted by native CPU synthesis')
-    print('Jun CPU offline checks passed; live gameplay remains a separate player test')
+    for name,folder in (('Jun','jun'),('Kazuya','kazuya')):
+        pack=(ROOT/'workspace/jun-import'/folder/f'{name}-TTT1-combat.jmv').read_bytes()
+        record_count=struct.unpack_from('<I',pack,12)[0];records=struct.unpack_from('<I',pack,28)[0]
+        commands=set()
+        for i in range(record_count):
+            cancel=struct.unpack_from('<I',pack,records+i*56+12)[0]
+            for j in range(1024):
+                cmd=struct.unpack_from('<H',pack,cancel+j*12)[0]
+                if cmd==0xc000:break
+                commands.add(cmd)
+            else:raise AssertionError('Unterminated cancel list')
+        m=Machine(patched[5])
+        # E000+ sequences go through the host lookup; they are checked below.
+        extended={cmd for cmd in commands if cmd>=0xe000};commands-=extended
+        for cmd in commands:
+            result=m.call(0x800618c0,0x8009f318,cmd,0x80450000)
+            if cmd&0xc000:
+                assert result==0xffffffff,hex(cmd)
+            else:
+                direction_mask=(cmd>>5)&0x1ff
+                index=next((i for i in range(9,0,-1) if int.from_bytes(m.read(0x8002303c+i*2,2),'little')&direction_mask),0)
+                expected=int.from_bytes(m.read(0x80023050+index*2,2),'little')
+                for i in range(4):
+                    if cmd&(1<<i):expected|=int.from_bytes(m.read(0x80023064+i*2,2),'little')
+                assert result==expected,(hex(cmd),result,expected)
+        print(f'All {len(commands)} actual {name} command IDs resolve in native CPU input synthesis')
+        ro,rn=struct.unpack_from('<II',pack,20);cursor=ro+rn*4
+        pattern_count=struct.unpack_from('<I',pack,cursor)[0];cursor+=4
+        m=Machine(patched[5]);lookup={};sequences={};pointer=0x80440000
+        for i in range(pattern_count):
+            cmd,n=struct.unpack_from('<HH',pack,cursor);cursor+=4
+            seq=pack[cursor:cursor+n*2];cursor+=n*2
+            assert cmd==0xe000+i and 3<=n<=65 and seq[-2:]==bytes(2)
+            extended.discard(cmd)
+            m.write(pointer,seq);lookup[cmd]=pointer;sequences[cmd]=struct.unpack('<'+'H'*n,seq);pointer+=n*2
+        # Keep non-vacuous extended-format coverage even for a pack with no E000s.
+        for i,seq in enumerate(((12,0x106,0),(20,6,5,0x206,0),(30,2,3,0x409,0))):
+            cmd=0xe400+i;m.write(pointer,struct.pack('<'+'H'*len(seq),*seq));lookup[cmd]=pointer;sequences[cmd]=seq;pointer+=len(seq)*2
+        m.stub(0x8002cd7c,lambda:lookup.get(m.u.reg_read(UC_MIPS_REG_A0),0))
+        for cmd,seq in sequences.items():
+            state=0x8009f318;m.write(state,bytes(0x330))
+            assert m.call(0x800618c0,state,cmd,0x80450000)==0xffffffff
+            direction=int.from_bytes(m.read(0x8002301c+(seq[1]&15)*2,2),'little')
+            buttons=sum(bit for src,bit in ((0x100,0x80),(0x200,0x10),(0x400,0x40),(0x800,0x20)) if seq[1]&src)
+            assert int.from_bytes(m.read(state+4,2),'little')==direction|buttons
+            assert m.value(state+8)==(lookup[cmd]+4 if seq[2] else 0)
+            assert m.value(state+0x5c)==0x80450000
+        assert not extended,sorted(map(hex,extended))  # every used E000+ ID has a sequence
+        print(f'Extended input format: {pattern_count} asset sequences + 3 synthetic sequences accepted by native CPU synthesis')
+    print('Jun and Kazuya CPU offline checks passed; live gameplay remains a separate player test')
 
 if __name__=='__main__':main()

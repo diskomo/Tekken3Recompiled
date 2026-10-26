@@ -8,7 +8,7 @@
 #include "tekken3_jun_costumes.h"
 #include "tekken3_jun_texture_layout.h"
 
-enum { TTT_FIGHTER_COUNT=1, TTT_FACE_SOURCES=4, TTT_NO_FACE=0xffff };
+enum { TTT_FIGHTER_COUNT=2, TTT_FACE_SOURCES=4, TTT_NO_FACE=0xffff };
 
 /* Face expressions copy a 16x64 source tile over the destination tile;
  * variant 0 restores the destination's own tile. A masked fighter has none:
@@ -40,7 +40,7 @@ typedef struct TttFighter {
 } TttFighter;
 
 extern const TttFighter tekken3_ttt_fighters[TTT_FIGHTER_COUNT];
-enum { TTT_JUN=0 };
+enum { TTT_JUN=0, TTT_KAZUYA=1 };
 
 /* Explicit override, otherwise the private pack beside the executable. */
 const char *tekken3_ttt_asset_root(const TttFighter *fighter);
@@ -78,4 +78,6 @@ unsigned tekken3_ttt_part_limit(uint32_t actor);
 /* Shared per-frame work: model installs, combat, voices. Each fighter's
  * VBlank plugin calls it; later calls in the same frame are ignored. */
 void tekken3_ttt_tick(void);
+/* Roster work for a TTT1 import other than Jun, once its assets are live. */
+void tekken3_ttt_roster_tick(unsigned fighter);
 #endif

@@ -38,6 +38,12 @@ GLYPHS = {'Z': '''AAAAAAAAA A11111116 A11111116 A66666116 AAAAA8115 AAAA9114A AA
                   .A911A911A. .A9116911A. .AA91119AA. ..A91119A.. ..A91119A.. ..AA911AA..
                   ...A911A... ...A911A... ...AAAAA...'''}
 FIGHTER_UI = {
+    'kazuya': dict(portrait=17, name='KAZUYA',
+                   # Stock name bundle and column span for each other letter.
+                   letters={'K': (161, 0, 8), 'U': (161, 8, 16), 'A': (161, 26, 35), 'Y': (169, 16, 24)},
+                   backdrop=((112, 16, 16), (24, 4, 8)),
+                   crops={'selector-tall': (24, 12, 140, 191), 'selector': (24, 18, 140, 171),
+                          'loading-tall': (24, 60, 140, 150), 'loading': (24, 66, 140, 142)}),
 }
 SIZES = {'selector-tall': (44, 68), 'selector': (44, 58), 'loading-tall': (44, 34), 'loading': (44, 29)}
 

@@ -30,12 +30,20 @@ int main(void) {
     static unsigned char pcm[2000];
     for(unsigned i=0;i<1000;i++){pcm[i*2]=0x00;pcm[i*2+1]=0x40;}
     /* Jun: damage 160..162, KO 163, attacks 164..170, victory 171. */
-    VoiceBank *jun=&banks[TTT_JUN];
+    VoiceBank *jun=&banks[TTT_JUN],*kazuya=&banks[TTT_KAZUYA];
     for(unsigned i=0;i<12;i++) {
         unsigned id=160+i,group=i<3?3:i==3?4:i<11?2:5,index=i<3?i:i==3?0:i<11?i-4:0;
         jun->samples[i]=(TttSample){pcm,1000,id,group,index};jun->group_count[group]++;
     }
-    jun->count=12;jun->loaded=jun->attempted=1;any_loaded=1;
+    jun->count=12;jun->loaded=jun->attempted=1;
+    /* Kazuya's profile 18: attacks 673,678,680..683; damage 676,677,679;
+     * KO 675; victory 674, in sample ID order. */
+    static const unsigned kazuya_roles[11][2]={{2,0},{5,0},{4,0},{3,0},{3,1},{2,1},{3,2},{2,2},{2,3},{2,4},{2,5}};
+    for(unsigned i=0;i<11;i++) {
+        kazuya->samples[i]=(TttSample){pcm,1000,673+i,kazuya_roles[i][0],kazuya_roles[i][1]};
+        kazuya->group_count[kazuya_roles[i][0]]++;
+    }
+    kazuya->count=11;kazuya->loaded=kazuya->attempted=1;any_loaded=1;
     int16_t out[1200];
     cry(1,0x2003);assert(native_calls==1 && !voices[1].group);
     for(unsigned i=0;i<7;i++){cry(0,0x2000+i);assert(voices[0].id==164+i);}
@@ -64,6 +72,14 @@ int main(void) {
     cry(0,0x2000);mode[0]=0;__wrap_spu_render(out,10);assert(!voices[0].group);
     mode[0]=2;cry(0,0x2000);game_mode=9;tekken3_ttt_voices_tick();assert(!voices[0].group);
     game_mode=8;cry(0,0x2000);__wrap_spu_init();assert(!voices[0].group);
-    puts("TTT1 voice routing, independent players, gain, mute, saturation and reset: PASS");
+    /* Each player uses its own fighter's bank, wrapping within each role. */
+    fighter[1]=TTT_KAZUYA;
+    static const unsigned attacks[6]={673,678,680,681,682,683};
+    for(unsigned i=0;i<8;i++){cry(1,0x2000+i);assert(voices[1].id==attacks[i%6]);}
+    cry(1,0x3001);assert(voices[1].id==677);
+    cry(1,0x4005);assert(voices[1].id==675);
+    cry(1,0x5000);assert(voices[1].id==674);
+    cry(0,0x3001);assert(voices[0].id==161);
+    puts("TTT1 voice routing, independent players and fighters, gain, mute, saturation and reset: PASS");
     return 0;
 }

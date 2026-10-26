@@ -1,5 +1,97 @@
 {
   "schema_version": 1,
   "method": "tools/capture_ttt1_voice_oracle.lua: each ID requested through the original H8 driver; C352 voice 21 registers at execute-key-on. Addresses only; no sample data.",
-  "fighters": {}
+  "fighters": {
+    "kazuya": {
+      "sound_profile": 18,
+      "group_counts": [
+        6,
+        3,
+        1,
+        1
+      ],
+      "group_ids": [
+        673,
+        678,
+        680,
+        681,
+        682,
+        683,
+        676,
+        677,
+        679,
+        675,
+        674
+      ],
+      "frequency": 6176,
+      "samples": {
+        "673": {
+          "bank": 92,
+          "start": 46086,
+          "end": 50872,
+          "flags": 8
+        },
+        "674": {
+          "bank": 92,
+          "start": 50888,
+          "end": 3268,
+          "flags": 8
+        },
+        "675": {
+          "bank": 93,
+          "start": 3284,
+          "end": 15953,
+          "flags": 8
+        },
+        "676": {
+          "bank": 93,
+          "start": 15968,
+          "end": 19063,
+          "flags": 8
+        },
+        "677": {
+          "bank": 93,
+          "start": 19078,
+          "end": 21735,
+          "flags": 8
+        },
+        "678": {
+          "bank": 93,
+          "start": 21750,
+          "end": 25314,
+          "flags": 8
+        },
+        "679": {
+          "bank": 93,
+          "start": 25330,
+          "end": 31934,
+          "flags": 8
+        },
+        "680": {
+          "bank": 93,
+          "start": 31950,
+          "end": 40926,
+          "flags": 8
+        },
+        "681": {
+          "bank": 93,
+          "start": 40942,
+          "end": 45050,
+          "flags": 8
+        },
+        "682": {
+          "bank": 93,
+          "start": 45066,
+          "end": 48008,
+          "flags": 8
+        },
+        "683": {
+          "bank": 93,
+          "start": 48024,
+          "end": 58480,
+          "flags": 8
+        }
+      }
+    }
+  }
 }

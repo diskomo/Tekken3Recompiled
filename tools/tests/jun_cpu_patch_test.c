@@ -18,9 +18,9 @@ int main(int argc,char **argv) {
     assert(argc==3);FILE *f=fopen(argv[1],"rb");assert(f);
     assert(fread(ram,1,sizeof ram,f)==sizeof ram);fclose(f);
     /* The shared roster owns the CPU tuning table; these are the pools. */
-    /* Jun (23), as the roster pools her. */
-    roster_cpu_patch(1u<<23);
-    unsigned before=writes;roster_cpu_patch(1u<<23);assert(writes==before);
+    /* Jun (23) and Kazuya (24), as the roster pools them. */
+    roster_cpu_patch(3u<<23);
+    unsigned before=writes;roster_cpu_patch(3u<<23);assert(writes==before);
     f=fopen(argv[2],"wb");assert(f);assert(fwrite(ram,1,sizeof ram,f)==sizeof ram);fclose(f);
     printf("CPU patches: %u writes; repeat application is idempotent\n",writes);
 }

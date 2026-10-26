@@ -16,6 +16,8 @@ kuma-polar|11|POLAR BEAR|0x8000|3|kuma-polar
 jun-arcade-1|23|BLUE DENIM|0x8000|-1|jun-arcade-1
 jun-arcade-2|23|WHITE WAISTCOAT|0x4000|-1|jun-arcade-2
 jun-arcade-3|23|KARATE GI|0x0008|-1|jun-arcade-3
+kazuya-arcade-1|24|KARATE PANTS|0x8000|-1|kazuya-arcade-1
+kazuya-arcade-2|24|PURPLE SUIT|0x4000|-1|kazuya-arcade-2
 eddy-original-1|8|ORIGINAL OUTFIT 1|0x8000|-1|eddy-original-1
 eddy-original-2|8|ORIGINAL OUTFIT 2|0x4000|-1|eddy-original-2
 eddy-tiger|8|TIGER JACKSON|0x0008|-1|eddy-tiger
