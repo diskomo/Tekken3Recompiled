@@ -3,6 +3,7 @@
 #include "mod_plugins.h"
 #include "gpu.h"
 #include "psx_sdl.h"
+#include "tekken3_guest.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +11,7 @@
 extern uint16_t __real_tekken3_outfits_input(int player,uint16_t buttons);
 extern int __real_host_osd_outfit_image(int player,const uint32_t **pixels,int *w,int *h);
 extern void __real_host_osd_draw_sdl(SDL_Renderer *renderer);
-extern void tekken3_jun_select(int enabled);
+extern void tekken3_ttt_select(int enabled);
 extern int tekken3_jun_roster_enabled(void);
 extern void tekken3_jun_roster_tick(void);
 static int selecting,choice,locked,was_selecting;
@@ -21,27 +22,27 @@ void tekken3_jun_selector_tick(void) {
     if(tekken3_jun_roster_enabled()) { selecting=0;return; }
     /* The GPU heuristic is unavailable in the software renderer. Gate this
      * SLUS-00402 shim on the loaded selector overlay and its native state. */
-    selecting=psx_mod_read_word(0x800ae204)==9 &&
-        psx_mod_read_half(0x800ae224)<=1 &&
-        psx_mod_read_word(0x8010ff4c)==0x27bdffd0 &&
+    selecting=psx_mod_read_word(T3_SCREEN)==T3_SCREEN_CABINET &&
+        psx_mod_read_half(T3_SCREEN_PHASE)<=1 &&
+        tekken3_cabinet_selector_loaded() &&
         psx_mod_read_word(0x8010ff50)==0x3c028012;
     if(selecting && !was_selecting) {
-        choice=locked=0;previous=0xffff;tekken3_jun_select(0);
+        choice=locked=0;previous=0xffff;tekken3_ttt_select(0);
     }
-    if(selecting && psx_mod_read_byte(0x80098106)!=9)choice=locked=0;
+    if(selecting && psx_mod_read_byte(T3_P1_CHARACTER)!=9)choice=locked=0;
     if(!selecting && was_selecting && (locked ||
-       (psx_mod_read_word(0x800ae204)==9 && psx_mod_read_half(0x800ae224)==2)))
-        tekken3_jun_select(choice);
+       (psx_mod_read_word(T3_SCREEN)==T3_SCREEN_CABINET && psx_mod_read_half(T3_SCREEN_PHASE)==2)))
+        tekken3_ttt_select(choice);
     was_selecting=selecting;
 }
 uint16_t __wrap_tekken3_outfits_input(int player,uint16_t buttons) {
     if(tekken3_jun_roster_enabled())return __real_tekken3_outfits_input(player,buttons);
     if(player==0) {
         uint16_t edges=previous & (uint16_t)~buttons;previous=buttons;
-        if(selecting && psx_mod_read_byte(0x80098106)==9) {
+        if(selecting && psx_mod_read_byte(T3_P1_CHARACTER)==9) {
             if(!locked && (edges&0x0100)) {
                 choice=!choice;
-                fprintf(stderr,"Jun selector: P1 highlighted %s\n",choice?"Jun":"Jin");
+                psx_mod_log("Jun selector: P1 highlighted %s\n",choice?"Jun":"Jin");
             }
             buttons|=0x0100;
             if((uint16_t)~buttons & 0xf008) {
@@ -74,7 +75,7 @@ static void label(int x,int y,const char *text,int scale,uint32_t color) {
     }
 }
 static int selector_image(const uint32_t **pixels,int *w,int *h) {
-    if(!selecting || psx_mod_read_byte(0x80098106)!=9)return 0;
+    if(!selecting || psx_mod_read_byte(T3_P1_CHARACTER)!=9)return 0;
     rect(0,0,W,H,0xff101a2c);rect(0,0,W,3,0xff72c8f4);
     label(12,12,locked?"READY TO FIGHT":"E  L2  CHANGE FIGHTER",2,0xffdbeaf4);
     rect(12,38,181,49,choice?0xff273449:0xff387da3);

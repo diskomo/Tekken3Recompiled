@@ -14,14 +14,15 @@ from pathlib import Path
 import struct
 
 try:
-    from .prepare_jun_import import BANK_SHA, RAM_SHA, verified
+    from .prepare_jun_import import BANK_SHA, verified
+    from .ttt1_fighters import FIGHTERS, JUN, Fighter, select_ram
 except ImportError:
-    from prepare_jun_import import BANK_SHA, RAM_SHA, verified
+    from prepare_jun_import import BANK_SHA, verified
+    from ttt1_fighters import FIGHTERS, JUN, Fighter, select_ram
 
 ROOT = Path(__file__).resolve().parents[1]
 JIN_RAM_SHA = "3e57e7a50b29ddb8104f990afc48e60dd1665f94cacef975550e74e6b47712d5"
 CHANNELS = 57
-JUN_IDLE = 0x102B58
 
 
 def decode(bank: bytes, base: int, frame: int, channels: int = CHANNELS) -> list[int]:
@@ -110,23 +111,23 @@ def validate_capture(bank: bytes, capture: Path) -> dict:
                 capture_sha256=hashlib.sha256(capture.read_bytes()).hexdigest())
 
 
-def export(work: Path, capture: Path | None = None) -> dict:
+def export(work: Path, capture: Path | None = None, fighter: Fighter = JUN) -> dict:
     bank = verified(work / "ttt1/bankedroms.bin", BANK_SHA)
-    jun = verified(work / "jun-select-ram.bin", RAM_SHA)
+    ram = select_ram(work, fighter)
     jin = verified(work / "jin-select-ram.bin", JIN_RAM_SHA)
-    aliases = struct.unpack_from("<5515I", jun, 0x2A7350)
+    aliases = struct.unpack_from("<5515I", ram, 0x2A7350)
     reference = struct.unpack_from("<5515I", jin, 0x2A7350)
     # Character-dependent entries only. Common reactions and Jin's missing
-    # entries must not be mislabelled as unique Jun attacks.
+    # entries must not be mislabelled as unique attacks of the fighter.
     changed = [(i, a) for i, (a, b) in enumerate(zip(aliases, reference))
                if a != b and a != 0x8009374C]
     records = []
     for address in sorted({a for _, a in changed}):
-        fields = struct.unpack_from("<13I", jun, address & 0x3FFFFF)
+        fields = struct.unpack_from("<13I", ram, address & 0x3FFFFF)
         records.append(dict(address=address, aliases=[i for i, a in changed if a == address],
                             animation=fields[0], raw_words=list(fields)))
     sources = sorted({r["animation"] for r in records})
-    out = work / "jun/motion"
+    out = fighter.out(work) / "motion"
     out.mkdir(parents=True, exist_ok=True)
     clips = []
     for source in sources:
@@ -134,13 +135,13 @@ def export(work: Path, capture: Path | None = None) -> dict:
         poses = b"".join(struct.pack("<57H", *decode(bank, source, f)) for f in range(count))
         name = f"{source:08x}.poses"
         (out / name).write_bytes(poses)
-        if source == JUN_IDLE:
-            (work / "jun/Jun-TTT1-idle.poses").write_bytes(poses)
+        if source == fighter.idle_clip:
+            (fighter.out(work) / f"{fighter.name}-TTT1-idle.poses").write_bytes(poses)
         clips.append(dict(source=source, frames=count, channels=57, file=name,
                           sha256=hashlib.sha256(poses).hexdigest()))
     report = dict(schema_version=1, source_bank_sha256=BANK_SHA, records=records, clips=clips,
                   total_frames=sum(c["frames"] for c in clips),
-                  status="Decoded arcade motion; convert_jun_moves.py performs the solo combat conversion",
+                  status="Decoded arcade motion; convert_ttt1_moves.py performs the solo combat conversion",
                   unresolved=["Tag-only transitions are excluded from the solo conversion"])
     if capture:
         report["arcade_validation"] = validate_capture(bank, capture)
@@ -151,9 +152,10 @@ def export(work: Path, capture: Path | None = None) -> dict:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--work-dir", type=Path, default=ROOT / "workspace/jun-import")
+    p.add_argument("--fighter", choices=sorted(FIGHTERS), default=JUN.key)
     p.add_argument("--validate-capture", type=Path)
     args = p.parse_args()
-    report = export(args.work_dir.resolve(), args.validate_capture)
+    report = export(args.work_dir.resolve(), args.validate_capture, FIGHTERS[args.fighter])
     print(f"Exported {len(report['clips'])} clips / {report['total_frames']} frames, "
           f"referenced by {len(report['records'])} character-dependent records")
     if "arcade_validation" in report:

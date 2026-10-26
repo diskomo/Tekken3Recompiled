@@ -2,7 +2,7 @@
  * locomotion matrices (head tracking disabled for capture). No ROM data is
  * embedded here. Differences from native IK/compression are below 1536/4096;
  * the erroneous whole-skeleton conversion produces half-turns near 8192. */
-#include "../../src/tekken3_jun_basis.h"
+#include "../../src/tekken3_ttt_basis.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,14 +15,14 @@ int main(int argc,char **argv) {
         assert(fread(native,1,sizeof native,f)==sizeof native);
         for(unsigned bone=0;bone<18;bone++) {
             memcpy(m,source[bone],sizeof m);
-            tekken3_jun_change_basis(m,bone,0);
+            tekken3_ttt_change_basis(m,bone,0);
             for(unsigned n=0;n<9;n++)assert(abs(m[n]-native[bone][n])<1536);
-            tekken3_jun_change_basis(m,bone,1);
+            tekken3_ttt_change_basis(m,bone,1);
             assert(!memcmp(m,source[bone],sizeof m));
             memcpy(m,native[bone],sizeof m);
-            tekken3_jun_change_basis(m,bone,1);
+            tekken3_ttt_change_basis(m,bone,1);
             for(unsigned n=0;n<9;n++)assert(abs(m[n]-source[bone][n])<1536);
-            tekken3_jun_change_basis(m,bone,0);
+            tekken3_ttt_change_basis(m,bone,0);
             assert(!memcmp(m,native[bone],sizeof m));
         }
         frames++;

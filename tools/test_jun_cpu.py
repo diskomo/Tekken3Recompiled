@@ -5,6 +5,7 @@ load a save state, or change disc/save files. Artifacts go under build-release.
 """
 from pathlib import Path
 import random
+import shutil
 import struct
 import subprocess
 from unicorn import Uc, UC_ARCH_MIPS, UC_MODE_MIPS32, UC_MODE_LITTLE_ENDIAN, UC_HOOK_CODE
@@ -58,8 +59,9 @@ def main():
     original=bytearray(0x800000);original[base:base+len(exe)-2048]=exe[2048:]
     table,*_=load_us_table(ROOT/'disc/SLUS_004.02')
     compiler=ROOT.parent/'.tools/toolchain-v1.0.10/bin/clang.exe'
-    combat=(ROOT/'src/tekken3_jun_combat.c').read_text()
-    wrapper='void __wrap_func_80059890(CPUState *cpu) {'+combat.split('void __wrap_func_80059890(CPUState *cpu) {',1)[1].split('void tekken3_jun_combat_tick',1)[0]
+    if not compiler.is_file():compiler=Path(shutil.which('clang') or 'clang')
+    combat=(ROOT/'src/tekken3_ttt_combat.c').read_text()
+    wrapper='void __wrap_func_80059890(CPUState *cpu) {'+combat.split('void __wrap_func_80059890(CPUState *cpu) {',1)[1].split('void tekken3_ttt_combat_tick',1)[0]
     (OUT/'jun_cpu_command_wrapper.inc').write_text(wrapper)
     command_test=OUT/'command-test.exe'
     subprocess.run([str(compiler),'-std=c11','-O2','-I',str(OUT),str(ROOT/'tools/tests/jun_cpu_command_test.c'),'-o',str(command_test)],check=True)
@@ -163,6 +165,10 @@ def main():
             native_state=baseline.read(0x8009f318,0x330)
             for own,opponent in ((23,9),(9,23),(23,23)):
                 m=Machine(patched[5]);m.w(0x800afa5c,0x800a9228);m.w(0x800a867c,0x800aaab4)
+                # The roster's extended tuning table: stock rows, then Jin's
+                # for the sentinel and every added fighter.
+                m.write(PROFILES,bytes(original[0x98260:0x98260+22*12]+original[0x98260+9*12:0x98260+10*12]*3))
+                m.w(0x800616cc,0x3c040000|PROFILES>>16);m.w(0x800616d4,0x34840000|PROFILES&65535)
                 m.h(0x800a9240,own);m.h(0x800aaacc,opponent)
                 m.h(0x800ae208,difficulty);m.b(0x800ae211,level)
                 m.call(0x80061488,0x8009f318,0,0,0)

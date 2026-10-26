@@ -1,5 +1,6 @@
 #include "tekken3_fight_camera.h"
 #include "mod_plugins.h"
+#include "tekken3_guest.h"
 #include <string.h>
 
 static int wide_fights_enabled;
@@ -26,7 +27,7 @@ static void activate_fight_camera(void)
 uint32_t tekken3_fight_camera_focal(CPUState* cpu)
 {
     return tekken3_fight_focal_policy(cpu->gpr[18], wide_fights_enabled,
-        psx_mod_widescreen_x_margin(), psx_mod_read_word(0x800AFA88u),
+        psx_mod_widescreen_x_margin(), psx_mod_read_word(T3_GAME_MODE),
         cpu->gpr[12]);
 }
 

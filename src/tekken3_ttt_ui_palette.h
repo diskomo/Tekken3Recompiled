@@ -1,16 +1,16 @@
 /* Menu CLUTs temporarily share the resident effects rows. Preserve native
  * updates while the menu owns them, and return the rows when it closes. */
-#ifndef TEKKEN3_JUN_UI_PALETTE_H
-#define TEKKEN3_JUN_UI_PALETTE_H
+#ifndef TEKKEN3_TTT_UI_PALETTE_H
+#define TEKKEN3_TTT_UI_PALETTE_H
 #include <stdint.h>
 #include <string.h>
 #include "gpu_render.h"
-typedef struct JunUiPalette {
+typedef struct TttUiPalette {
     uint16_t native[256], uploaded[256];
     int active;
-} JunUiPalette;
+} TttUiPalette;
 
-static void jun_ui_palette_upload(JunUiPalette *p, unsigned y, const uint16_t *colors) {
+static void ttt_ui_palette_upload(TttUiPalette *p, unsigned y, const uint16_t *colors) {
     uint16_t current[256];
     gr_vram_transfer_out(0,y,256,1,current);
     for(unsigned i=0;i<256;i++)
@@ -20,7 +20,7 @@ static void jun_ui_palette_upload(JunUiPalette *p, unsigned y, const uint16_t *c
     gr_vram_transfer_in(0,y,256,1,colors);
 }
 
-static void jun_ui_palette_release(JunUiPalette *p, unsigned y) {
+static void ttt_ui_palette_release(TttUiPalette *p, unsigned y) {
     if(!p->active)return;
     uint16_t current[256];
     gr_vram_transfer_out(0,y,256,1,current);

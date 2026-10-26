@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "method": "tools/capture_ttt1_voice_oracle.lua: each ID requested through the original H8 driver; C352 voice 21 registers at execute-key-on. Addresses only; no sample data.",
+  "fighters": {}
+}

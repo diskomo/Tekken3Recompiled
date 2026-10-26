@@ -8,7 +8,8 @@ and manually selected CPU opponents use this flow in normal and Team selectors.
 | Control | Action |
 | --- | --- |
 | Any attack button on the roster | Select character and open outfit step |
-| Left / Right, left stick, or L1 / R1 | Browse; wrap at either end |
+| L1 / R1 | Browse; wrap at either end |
+| Any direction | Leave the outfit step and move the roster cursor |
 | Cross / A (also Square, Triangle or Start) | Confirm the displayed outfit |
 | Circle / B (also Select) | Unselect character and return to the roster |
 

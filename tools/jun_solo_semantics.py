@@ -1,7 +1,7 @@
 """System 12 -> SLUS-00402 combat data translations.
 
 These are field translations, not a nearest-move/template selection. Addresses
-refer to the verified private executable captures used by convert_jun_moves.
+refer to the verified private executable captures used by convert_ttt1_moves.
 """
 import struct
 
@@ -34,8 +34,10 @@ def properties(ram, pointer):
             group, action = divmod(kind-0x1b, 16)
             if action < 8:
                 translated = 0xe+group*16+action
-        if kind==0x26:
-            translated=0x40  # Jun facial expression, handled by her texture adapter.
+        if 0x25 <= kind <= 0x2a:
+            # Face variant kind-0x25 (TTT 80104C64, table 801945D8), handled
+            # by the fighter's texture adapter. Jun's expression is 0x26.
+            translated=0x3f+kind-0x25
         if translated is None:
             omitted.append((frame, kind, arg))
         else:

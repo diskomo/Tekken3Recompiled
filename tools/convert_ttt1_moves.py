@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the private, experimental Jun combat bridge from verified donor data.
+"""Build a private, experimental TTT1 fighter's combat bridge from verified data.
 
 Preserves donor motion, input links, hit-table damage, attacking bones and
 active frames. Hit reactions use translated source tables. Unsupported
@@ -11,17 +11,18 @@ import hashlib
 import json
 import struct
 try:
-    from .prepare_jun_import import BANK_SHA, RAM_SHA, verified
+    from .prepare_jun_import import BANK_SHA, verified
     from .ttt1_motion import decode
+    from .ttt1_fighters import FIGHTERS, JUN, select_ram
     from . import jun_solo_semantics as solo
 except ImportError:
-    from prepare_jun_import import BANK_SHA, RAM_SHA, verified
+    from prepare_jun_import import BANK_SHA, verified
     from ttt1_motion import decode
+    from ttt1_fighters import FIGHTERS, JUN, select_ram
     import jun_solo_semantics as solo
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / 'workspace/jun-import'
-BASE_ID = 8192
 NATIVE_EXE_SHA='fbda8b68e5799dbef4af39a161783bc670c15b0aa0e87dce65e210717da19b8c'
 # Shared contact tests (2..23), distance, attack class, posture and reaction
 # flags. TTT's inserted facing tests shift the later PS1 condition numbers.
@@ -33,14 +34,19 @@ CONDITIONS.update({37:76,38:77,39:78})
 CONDITIONS.update({i:79+(i-80)%4 for i in range(80,88)})
 
 
-def character_requirement(code):
+def character_requirement(code,fighter=JUN):
     if code in (0,0xed):return True
     if code==0xec:return False
-    if 1<=code<0x22:return code-1==28
-    if 0x22<=code<0x43:return code-0x22!=28
-    if 0x85<=code<0xa7:return code-0x85==30
-    if 0xc9<=code<0xeb:return code-0xc9!=30
+    if 1<=code<0x22:return code-1==fighter.select_id
+    if 0x22<=code<0x43:return code-0x22!=fighter.select_id
+    if 0x85<=code<0xa7:return code-0x85==fighter.model_index
+    if 0xc9<=code<0xeb:return code-0xc9!=fighter.model_index
     return None
+
+
+def opponent_requirement(code):
+    """TTT1 select ID the opponent must have, as in hit rows 0x43..0x63."""
+    return code-0x43 if 0x43<=code<0x64 else None
 
 
 def cancel_rows(ram,pointer,stack=()):
@@ -56,8 +62,8 @@ def cancel_rows(ram,pointer,stack=()):
     raise ValueError('Unterminated cancel list')
 
 
-def hit_data(ram,index):
-    """Resolve Jun's normal hit row as the arcade's 801012D4 does.
+def hit_data(ram,index,fighter=JUN):
+    """Resolve the fighter's normal hit row as the arcade's 801012D4 does.
 
     Record +0x14 indexes ten-byte hit rows at 800EC8BC. Record +0x28
     contains four limb IDs, not damage. Opponent-specific rows are exported
@@ -66,7 +72,7 @@ def hit_data(ram,index):
     dynamic=False
     for i in range(128):
         row=struct.unpack_from('<5H',ram,0xec8bc+(index+i)*10)
-        req=character_requirement(row[0])
+        req=character_requirement(row[0],fighter)
         if row[0]==0xffff or req is True:return row,dynamic
         if req is None:dynamic=True
     raise ValueError('Unterminated arcade hit-data list')
@@ -81,10 +87,11 @@ def hit_rows(ram,index):
     raise ValueError('Unterminated arcade hit-data list')
 
 
-def build(work=WORK):
-    ram = verified(work/'jun-select-ram.bin', RAM_SHA)
+def build(work=WORK,fighter=JUN):
+    ram = select_ram(work,fighter)
     bank = verified(work/'ttt1/bankedroms.bin', BANK_SHA)
-    manifest = json.loads((work/'jun/motion/manifest.json').read_text())
+    out = fighter.out(work)
+    manifest = json.loads((out/'motion/manifest.json').read_text())
     native_exe = verified(ROOT/'disc/SLUS_004.02',NATIVE_EXE_SHA)[0x800:]
     aliases = struct.unpack_from('<5515I', ram, 0x2a7350)
     addresses = {x['address'] for x in manifest['records']}
@@ -93,14 +100,16 @@ def build(work=WORK):
     native_aliases=solo.native_aliases()
     native_aliases={k:v for k,v in native_aliases.items() if aliases[v]!=0x8009374c}
     addresses.update(aliases[v] for v in native_aliases.values())
-    # Follow the actual Jun graph, including moves shared with Jin. A diff of
-    # their alias tables alone omits shared recovery and attack destinations.
+    # Follow the fighter's actual graph, including moves shared with Jin. A diff
+    # of their alias tables alone omits shared recovery and attack destinations.
     pending=list(addresses)
     while pending:
         v=struct.unpack_from('<13I',ram,pending.pop()&0x3fffff)
         targets=[v[4]&65535]
         for cmd,req,param,nxt,kind,window,end in cancel_rows(ram,v[3]):
-            if cmd==0x8000 or (character_requirement(req&255) is True and not (cmd<0x8000 and cmd&0x4000) and
+            requirement=character_requirement(req&255,fighter)
+            if requirement is None and opponent_requirement(req&255) is not None:requirement=True
+            if cmd==0x8000 or (requirement is True and not (cmd<0x8000 and cmd&0x4000) and
                 (req>>8)&127 in CONDITIONS and solo.transition(kind) is not None and not kind&0x3f80):
                 targets.append(nxt)
         for hit in hit_rows(ram,v[5]&65535):
@@ -121,9 +130,10 @@ def build(work=WORK):
     event_scripts={}
     rx_ids=sorted({idx for v in raw for row in hit_rows(ram,v[5]&65535) for idx in row[2:4]})
     dynamic_hits=[]
+    dynamic_cancels=[]
     distance_hits=[]
     # The native reaction table contains 633 records. Preserve stock fighters;
-    # append source-derived Jun rows and their original pushback curves.
+    # append the source-derived rows and their original pushback curves.
     rx_map={idx:633+i for i,idx in enumerate(rx_ids)}
     rx_blob=bytearray(native_exe[0xce8:0xce8+633*42])
     push_blob=bytearray(native_exe[0x75c:0xce8])
@@ -141,6 +151,10 @@ def build(work=WORK):
                 words.append(value)
                 if k and not value:break
             else:raise ValueError('Unterminated input sequence')
+            # SLUS-00402 keeps 60 frames of input history (actor +41C) and
+            # its matcher (8002CA84) wraps that ring, so a longer window
+            # (Armor King's 94..114) is clamped to the history it holds.
+            if words[0]>60:words[0]=60;skipped['input_window_clamped']+=1
             if not 1<=words[0]<=60 or len(words)<3:raise ValueError('Invalid input sequence')
             patterns[cmd]=(0xe000+len(patterns),words)
         return patterns[cmd][0]
@@ -148,7 +162,7 @@ def build(work=WORK):
     def target(alias):
         if alias == 56: return 3
         if 0 <= alias < len(aliases) and aliases[alias] in indices:
-            return BASE_ID + indices[aliases[alias]]
+            return fighter.base_id + indices[aliases[alias]]
         return None
 
     def required_target(alias):
@@ -157,7 +171,8 @@ def build(work=WORK):
             raise ValueError(f'Unconverted solo animation destination {alias:04x}')
         return resolved
 
-    def cancels(pointer):
+    def cancels(pointer,record):
+        rows=0
         for cmd,req,param,nxt,kind,window,end in cancel_rows(ram,pointer):
             dest = target(nxt)
             if cmd == 0x8000:
@@ -172,7 +187,12 @@ def build(work=WORK):
                 if kind & 0x2000:skipped['solo_excluded_partner_recovery']+=1
                 yield struct.pack('<4H4B',0xc000,0,0,required_target(nxt),transition,window>>8,end&255,end>>8)
                 return
-            requirement=character_requirement(req&255)
+            requirement=character_requirement(req&255,fighter)
+            opponent=opponent_requirement(req&255)
+            if opponent is not None:
+                # The adapter sets this row's native character byte to match
+                # only the opponent with this TTT1 select ID.
+                requirement=True
             if requirement is False:
                 skipped['other_character_rule']+=1;continue
             if cmd<0x8000 and cmd&0x4000:
@@ -204,7 +224,9 @@ def build(work=WORK):
             elif condition==75:
                 if param not in groups:raise ValueError(f'Unknown contact group {param:x}')
                 param|=0x4000
+            if opponent is not None:dynamic_cancels.append((record,rows,opponent))
             # Bit 15/14 became bit 7/6 in the PS1 transition byte.
+            rows+=1
             yield struct.pack('<4H4B',cmd,condition<<8,param,dest,transition,window>>8,end&255,end>>8)
 
     # Header, metadata records (16 bytes), native records (56 bytes).
@@ -220,22 +242,26 @@ def build(work=WORK):
             data=struct.pack('<II',0x4a554e00|count,57)
             data+=b''.join(struct.pack('<57H',*decode(bank,source,f)) for f in range(count))
             pose_offsets[source]=append(data)
-        converted=list(cancels(v[3]))
+        converted=list(cancels(v[3],i))
         # A nested group can end without the parent sentinel.
         if not converted or struct.unpack_from('<H',converted[-1])[0]!=0xc000:
             converted.append(struct.pack('<4H4B',0xc000,0,0,required_target(v[4]&65535),6,0,0,0))
         # Flattened subroutines return at 800e; only the outer list terminates.
         cp=append(b''.join(converted))
-        hit,dynamic_hit=hit_data(ram,v[5]&65535)
+        hit,dynamic_hit=hit_data(ram,v[5]&65535,fighter)
         damage=hit[1]
         if hit[4]:distance_hits.append((i,hit[4],rx_map[hit[3]],rx_map[hit[2]]))
         if dynamic_hit:
             variants=hit_rows(ram,v[5]&65535)
             if any(not 0x43<=row[0]<0x64 or row[1:]!=variants[0][1:] for row in variants[:-1]) or any(
-                variants[0][k]!=hit[k] for k in (1,3,4)):
+                variants[0][k]!=hit[k] for k in (3,4)):
                 raise ValueError('Untranslated opponent-specific hit rule')
             mask=sum(1<<(row[0]-0x43) for row in variants[:-1])
-            dynamic_hits.append((i,mask,rx_map[variants[0][2]],rx_map[hit[2]]))
+            alternate,normal=rx_map[variants[0][2]],rx_map[hit[2]]
+            # Armor King's throws also deal one less damage to some opponents;
+            # the high halves then carry both damages.
+            if variants[0][1]!=hit[1]:alternate|=variants[0][1]<<16;normal|=hit[1]<<16
+            dynamic_hits.append((i,mask,alternate,normal))
         t=[0]*14
         t[0]=pose_offsets[source];t[1]=v[1];t[2]=v[2];t[3]=cp
         # Both engines add the high halfword to facing at recovery.
@@ -251,11 +277,22 @@ def build(work=WORK):
         t[7]=append(struct.pack(f'<{len(sounds)+1}H',*sounds,0xffff))
         props,omitted_props=solo.properties(ram,v[8])
         t[8]=append(b''.join(struct.pack('<HH',*p) for p in props)+b'\0'*4)
-        for _,kind,_ in omitted_props:skipped[f'timed_property_{kind:02x}']+=1
+        for _,kind,_ in omitted_props:
+            # Kind 6 (TTT 801654EC) clears face/blink timers. Expressions here
+            # last only for their own record, so there is nothing to clear.
+            skipped['face_state_reset' if kind==6 else f'timed_property_{kind:02x}']+=1
         t[9]=solo.flags(v[9])
         # v3 packs store these IDs directly; the runtime allocates the native
-        # descriptor and evaluates the sweep from Jun's animated skeleton.
-        t[10]=v[10]
+        # descriptor and evaluates the sweep from the animated arcade skeleton.
+        # Each pair is (end, start) limb. Limbs 18+ (Kunimitsu's blade) have
+        # no SLUS-00402 joint: the capsule then sweeps the remaining limb.
+        limbs=list((v[10]).to_bytes(4,'little'))
+        for k in (0,2):
+            end,start=limbs[k],limbs[k+1]
+            if start>=18:start=0;skipped['extended_attack_limb']+=1
+            if end>=18:end,start=start,0;skipped['extended_attack_limb']+=1
+            limbs[k:k+2]=end,start
+        t[10]=int.from_bytes(bytes(limbs),'little')
         t[11]=((v[11]&0xffff)<<8)|((v[11]>>16)&255)
         t[12]=(v[12]&65535)|(rx_map[hit[2]]<<16)
         t[13]=len(counter_blob)//4
@@ -295,19 +332,23 @@ def build(work=WORK):
     chunk(b'EVNT',b''.join(struct.pack('<II',i,len(events))+struct.pack(f'<{len(events)}I',*events)
                          for i,events in sorted(event_scripts.items())))
     chunk(b'DYNH',b''.join(struct.pack('<4I',*row) for row in dynamic_hits))
+    if dynamic_cancels:
+        chunk(b'DYNC',b''.join(struct.pack('<HHI',*row) for row in dynamic_cancels))
     struct.pack_into('<8I',tables,0,0x3154534a,2,len(tables),len(rx_blob)//42,len(push_blob),len(counter_blob)//4,0,0)
     allowed_exclusions={'other_character_rule','native_round_controller',
                         'solo_excluded_tag_input','solo_excluded_partner_transition',
-                        'solo_excluded_partner_recovery'}
+                        'solo_excluded_partner_recovery','face_state_reset','extended_attack_limb',
+                        'input_window_clamped'}
     unresolved={kind:n for kind,n in skipped.items() if kind not in allowed_exclusions}
     if unresolved or omitted_conditions:
         raise ValueError(f'Incomplete solo conversion: {unresolved}, conditions {dict(omitted_conditions)}')
-    (work/'jun/Jun-TTT1-tables.jst').write_bytes(tables)
-    output=work/'jun/Jun-TTT1-combat.jmv';output.write_bytes(blob)
+    (out/f'{fighter.name}-TTT1-tables.jst').write_bytes(tables)
+    output=out/f'{fighter.name}-TTT1-combat.jmv';output.write_bytes(blob)
     report=dict(records=len(raw),clips=len(pose_offsets),cancel_entries=sum(struct.unpack_from('<I',blob,32+i*16+12)[0] for i in range(len(raw))),
                 input_sequences=len(patterns),omitted_rules=dict(skipped),omitted_conditions=dict(omitted_conditions.most_common()),sha256=hashlib.sha256(blob).hexdigest(),
                 status='Solo source graph converted',
                 animation_event_scripts=len(event_scripts),opponent_specific_hit_records=len(dynamic_hits),
+                opponent_specific_cancels=len(dynamic_cancels),
                 distance_specific_hit_records=len(distance_hits),
                 native_entry_points=len(native_aliases),native_fallback_templates=[],
                 source_default_reaction='8009374c' if 0x8009374c in indices else None,
@@ -315,8 +356,12 @@ def build(work=WORK):
                 limits=['Native fight camera replaces TTT1 camera scripts',
                         'Hair and bow retain rigid attachment, without secondary physics',
                         'Live fixtures sample commands and opponents; exhaustive timing parity is not established'])
-    (work/'jun/combat-report.json').write_text(json.dumps(report,indent=2)+'\n')
+    (out/'combat-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))
     return report
 
-if __name__=='__main__': build()
+if __name__=='__main__':
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--fighter',choices=sorted(FIGHTERS),default=JUN.key)
+    build(fighter=FIGHTERS[parser.parse_args().fighter])

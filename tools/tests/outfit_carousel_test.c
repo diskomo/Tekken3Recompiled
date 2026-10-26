@@ -9,6 +9,7 @@ static unsigned char *at(uint32_t a) {
  assert(a>=0x80000000u && a<0x80200000u);return ram+(a&0x1fffff);
 }
 int gpu_tekken3_selector_active(void){return 0;} /* Exercise software path too. */
+int tekken3_selector_team_grid(int *c,uint32_t *t,int *s){(void)c;(void)t;(void)s;return 0;}
 uint8_t psx_mod_read_byte(uint32_t a){return *at(a);}
 uint16_t psx_mod_read_half(uint32_t a){uint16_t n;memcpy(&n,at(a),2);return n;}
 uint32_t psx_mod_read_word(uint32_t a){uint32_t n;memcpy(&n,at(a),4);return n;}
@@ -65,12 +66,13 @@ int main(void) {
  neutral();tap(1,0x2000); /* Even Circle first selects the character, not a skin. */
  assert(tekken3_outfits_view(1).visible);
  int start=tekken3_outfits_view(0).index;
- assert(tekken3_outfits_input(0,0xffdf)==0xffff);
- for(int i=0;i<20;i++)tekken3_outfits_input(0,0xffdf);
+ assert(tekken3_outfits_input(0,0xf7ff)==0xffff); /* R1 browses. */
+ for(int i=0;i<20;i++)tekken3_outfits_input(0,0xf7ff);
  assert(tekken3_outfits_view(0).index==(start+1)%3 && tekken3_outfits_menu_player()==-1);
- neutral();assert(tekken3_outfits_input(0,0xff7f)==0xffff);
- assert(tekken3_outfits_input(1,0xffdf)==0xffff);
  assert(tekken3_outfits_captures_input(0) && tekken3_outfits_captures_input(1));
+ /* Directions always leave the outfit step and move the roster cursor. */
+ neutral();assert(tekken3_outfits_input(0,0xff7f)==0xff7f && !tekken3_outfits_view(0).visible);
+ assert(tekken3_outfits_input(1,0xffdf)==0xffdf && !tekken3_outfits_view(1).visible);
  neutral();choose(0,2);choose(1,3);
  assert(tekken3_outfits_input(0,0x7fff)==0xbfff);
  assert(tekken3_outfits_input(1,0xbfff)==0x7fff);

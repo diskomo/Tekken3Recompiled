@@ -41,8 +41,12 @@ typedef struct Tekken3SelectorFrame {
     int active;
     /* 0 = cabinet selector, 1 = main menu, 2 = team roster selector. */
     int layout_kind;
-    /* Observed complete roster: cabinet 10/11 columns, team 7/8 columns. */
+    /* Observed complete roster: cabinet 10/11 columns (12-14 when declared
+     * by an extended roster), team 7/8 columns. */
     int roster_columns;
+    /* Canonical origin and pitch of a declared cabinet grid. */
+    int32_t roster_x0;
+    int32_t roster_pitch;
 } Tekken3SelectorFrame;
 
 typedef struct Tekken3SelectorPlacement {
@@ -82,6 +86,20 @@ int tekken3_selector_analyze_frame(const Tekken3SelectorPacket *packets,
                                    int32_t display_width,
                                    int32_t display_height,
                                    Tekken3SelectorFrame *out);
+
+/* A game-owned extended roster declares its compressed cabinet grid: `cells`
+ * portraits in two rows of `columns` at canonical X = x0 + pitch * column.
+ * The sidecar restores the stock 35px pitch across the wide canvas. Zero
+ * columns withdraws the declaration. */
+void tekken3_selector_declare_cabinet_grid(int columns, int x0, int pitch,
+                                           int cells);
+/* Likewise for the console (VS/Practice/Team Battle) grid: `cells` portraits
+ * in three rows of `columns` with canonical cell X = x0 + 36 * column, read
+ * from guest `table` in `stride`-byte {x, y, selection} cells. */
+void tekken3_selector_declare_team_grid(int columns, int x0, int cells,
+                                        uint32_t table, int stride);
+/* The declared console grid, if any; returns 0 for the stock tables. */
+int tekken3_selector_team_grid(int *columns, uint32_t *table, int *stride);
 
 /* A completed selector survives lists with no drawing (CD/upload waits).
  * New drawing outside its proven arena or a display-mode change ends it. */

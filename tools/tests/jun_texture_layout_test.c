@@ -6,12 +6,12 @@
 int main(void) {
     for(unsigned outfit=0;outfit<3;outfit++)for(unsigned player=0;player<2;player++)
         for(unsigned i=0;i<jun_texture_counts[outfit];i++) {
-            const JunTextureTile *t=&jun_texture_tiles[outfit][i];
+            const TttTextureTile *t=&jun_texture_tiles[outfit][i];
             /* Native fighter page + Jun's disabled native face-backup area. */
             assert((t->dx+t->w<=64 && t->dy+t->h<=224) ||
                    (t->dx>=64 && t->dx+t->w<=80 && t->dy+t->h<=128));
             for(unsigned k=0;k<i;k++) {
-                const JunTextureTile *s=&jun_texture_tiles[outfit][k];
+                const TttTextureTile *s=&jun_texture_tiles[outfit][k];
                 assert(t->dx>=s->dx+s->w || s->dx>=t->dx+t->w ||
                        t->dy>=s->dy+s->h || s->dy>=t->dy+t->h);
             }

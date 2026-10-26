@@ -4,6 +4,7 @@
 #include "mod_plugins.h"
 #include "psx_sha256.h"
 #include "psx_sdl.h"
+#include "tekken3_guest.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,9 +33,9 @@ static void stage_trace(const char *event, const char *format, ...) {
     }
     if(!log)return;
     fprintf(log,"%u %s ready=%d mode=%u screen=%u stage=%u cache=%u/%u fighters=%u/%u players=%u cpu=%u owner=%u ",
-        count++,event,ready,psx_mod_read_word(0x800afa88),psx_mod_read_word(0x800ae204),
+        count++,event,ready,psx_mod_read_word(T3_GAME_MODE),psx_mod_read_word(T3_SCREEN),
         psx_mod_read_half(0x800adc84),psx_mod_read_byte(0x800afaa2),psx_mod_read_byte(0x800afaa3),
-        psx_mod_read_half(0x800add5c),psx_mod_read_half(0x800add5e),
+        psx_mod_read_half(T3_SIDE_CHARACTERS),psx_mod_read_half(T3_SIDE_CHARACTERS+2),
         psx_mod_read_byte(0x800afaa4),psx_mod_read_byte(0x800afaa7),psx_mod_read_byte(0x800b053e));
     va_list args;va_start(args,format);vfprintf(log,format,args);va_end(args);
     fputc('\n',log);fflush(log);
@@ -45,14 +46,14 @@ static void stage_trace(const char *event, const char *format, ...) {
  * the compiled path selected Eddy (10/1). Do not rely on that callback. */
 int tekken3_jun_stage_prepare(const char *site) {
     if(!ready)return 0;
-    unsigned mode=psx_mod_read_word(0x800afa88);
+    unsigned mode=psx_mod_read_word(T3_GAME_MODE);
     if(mode>5)return 0; /* Demo, Tekken Ball and Force own their arenas. */
     unsigned players=psx_mod_read_byte(0x800afaa4),side;
     if(players==1)side=psx_mod_read_byte(0x800afaa7);
     else if(players==2 && (mode==1 || mode==2 || mode==5))
         side=psx_mod_read_byte(0x800b053e);
     else return 0;
-    if(side>1 || psx_mod_read_half(0x800add5c+side*2)!=23)return 0;
+    if(side>1 || psx_mod_read_half(T3_SIDE_CHARACTERS+side*2)!=23)return 0;
     unsigned prior=psx_mod_read_half(0x800adc84);
     psx_mod_write_half(0x800adc84,JUN_STAGE_ID);
     psx_mod_write_half(0x800add08,JUN_STAGE_MUSIC);
@@ -133,19 +134,19 @@ unsigned tekken3_jun_stage_initialize(void) {
     copy_guest(heights+20*4,0x80025138+4*4,4);
     ready=1;tekken3_jun_stage_tick();
     stage_trace("initialize","profiles=%08X textures=validated mesh=validated",profiles);
-    fprintf(stderr,"Jun stage: Heavenly Garden registered as stage 20, native textures, Jin BGM 16\n");
+    psx_mod_log("Jun stage: Heavenly Garden registered as stage 20, native textures, Jin BGM 16\n");
     return JUN_STAGE_ID;
 invalid:
     free(textures);free(mesh);textures=mesh=NULL;
-    fprintf(stderr,"Jun stage: pack or executable validation failed; keeping Jin stage 8\n");
+    psx_mod_log("Jun stage: pack or executable validation failed; keeping Jin stage 8\n");
     return 8;
 }
 
 void tekken3_jun_stage_tick(void) {
     if(!ready)return;
     static uint32_t previous[5];
-    uint32_t current[]={psx_mod_read_word(0x800afa88),psx_mod_read_word(0x800ae204),
-        psx_mod_read_word(0x800add5c),psx_mod_read_half(0x800adc84),psx_mod_read_word(0x800b0460)};
+    uint32_t current[]={psx_mod_read_word(T3_GAME_MODE),psx_mod_read_word(T3_SCREEN),
+        psx_mod_read_word(T3_SIDE_CHARACTERS),psx_mod_read_half(0x800adc84),psx_mod_read_word(0x800b0460)};
     if(memcmp(previous,current,sizeof current)) {
         memcpy(previous,current,sizeof current);
         stage_trace("state","render_stage=%u commit_opcode=%08X",current[4],psx_mod_read_word(0x8004f728));
@@ -163,7 +164,7 @@ int tekken3_jun_stage_load(CPUState *cpu) {
         cpu->pc,trace_ret,cpu->gpr[5],cpu->gpr[4]);
     if(!ready || (cpu->pc && cpu->pc!=0x80052ad0) ||
        psx_mod_read_half(0x800adc84)!=JUN_STAGE_ID)return 0;
-    unsigned mode=psx_mod_read_word(0x800afa88);
+    unsigned mode=psx_mod_read_word(T3_GAME_MODE);
     if(mode==7 || mode==8)return 0; /* Mode-owned stages always stay native. */
     uint32_t ret=cpu->gpr[31],record=cpu->gpr[5],size=0;
     const unsigned char *data=NULL;
@@ -175,7 +176,7 @@ int tekken3_jun_stage_load(CPUState *cpu) {
     if(!data)return 0;
     uint32_t dst=cpu->gpr[4],physical=dst&0x1fffffff;
     if(physical<0x10000 || physical>0x200000-size) {
-        fprintf(stderr,"Jun stage: invalid native load destination %08X\n",dst);
+        psx_mod_log("Jun stage: invalid native load destination %08X\n",dst);
         cpu->gpr[2]=0xffffffff;cpu->pc=ret;return 1;
     }
     for(unsigned i=0;i<size;i+=4) {
@@ -185,6 +186,6 @@ int tekken3_jun_stage_load(CPUState *cpu) {
      * Keep the exact buffer footprint and successful return value (zero). */
     cpu->gpr[2]=0;cpu->pc=ret;
     stage_trace("loaded","kind=%s caller=%08X bytes=%u dst=%08X",data==textures?"textures":"mesh",ret,size,dst);
-    fprintf(stderr,"Jun stage: loaded Heavenly Garden %s into %08X\n",data==textures?"textures":"mesh",dst);
+    psx_mod_log("Jun stage: loaded Heavenly Garden %s into %08X\n",data==textures?"textures":"mesh",dst);
     return 1;
 }

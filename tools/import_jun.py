@@ -32,7 +32,7 @@ def main():
     except ImportError:raise ValueError('Install the importer dependency: python -m pip install -r tools/requirements-import.txt')
     import arcade_model_probe as probe
     import prepare_jun_import as prepare, ttt1_motion as motion
-    import convert_jun_moves as combat, prepare_jun_voices as voices
+    import convert_ttt1_moves as combat, prepare_ttt1_voices as voices
     ttt=(args.ttt1 or choose('Select your tektagt.zip (TTT1 arcade)','*.zip')).resolve()
     t3=(args.t3_arcade or choose('Select your tekken3.zip (Tekken 3 arcade)','*.zip')).resolve()
     # Homebrew and Linux packages put MAME on PATH; Windows players pick mame.exe.

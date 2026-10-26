@@ -60,8 +60,9 @@ function(tekken3_wrap_generated)
             message(FATAL_ERROR "No generated shard defines ${_symbol}; regenerate game C")
         endif()
         # A shard compiled through a modified copy defines its routines there.
-        if(TEKKEN3_REPLACED_SHARD AND _definer STREQUAL TEKKEN3_REPLACED_SHARD)
-            set(_definer "${TEKKEN3_REPLACEMENT_SHARD}")
+        list(FIND TEKKEN3_REPLACED_SHARDS "${_definer}" _replaced)
+        if(_replaced GREATER -1)
+            list(GET TEKKEN3_REPLACEMENT_SHARDS ${_replaced} _definer)
         endif()
         target_compile_definitions(psx-runtime PRIVATE "${_symbol}=__wrap_${_symbol}")
         # -U/-D follow the target definitions on the command line, so this wins.
@@ -142,33 +143,46 @@ endif()
 option(TEKKEN3_JUN_EXPERIMENTAL "Build the Jun character import" ${_tekken3_jun_default})
 if(TEKKEN3_JUN_EXPERIMENTAL)
     target_compile_definitions(psx-runtime PRIVATE TEKKEN3_JUN_EXPERIMENTAL=1)
-    # The pushback hooks compile a modified copy of shard 04 in its place.
-    set(TEKKEN3_REPLACED_SHARD "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_04.c")
-    set(TEKKEN3_REPLACEMENT_SHARD "${CMAKE_CURRENT_BINARY_DIR}/tekken3_jun_push_generated.c")
-    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_mod.c")
+    # The pushback hooks compile a modified copy of shard 04 in its place, and
+    # the extended part loops modified copies of shards 06 and 07.
+    set(TEKKEN3_REPLACED_SHARDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_04.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_06.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_07.c")
+    set(TEKKEN3_REPLACEMENT_SHARDS
+        "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_push_generated.c"
+        "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_parts06_generated.c"
+        "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_parts07_generated.c")
+    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_import.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_fighters.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_ui.c")
     set(JUN_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/generated")
     if(NOT EXISTS "${JUN_GENERATED_DIR}/jun-render.exe_full_00.c")
         message(FATAL_ERROR "Prepare the local Jun assets with tools/prepare_jun_import.py first")
     endif()
-    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_renderer.c")
+    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_renderer.c")
     target_include_directories(psx-runtime PRIVATE "${JUN_GENERATED_DIR}")
     tekken3_wrap_generated(func_80036CAC func_80035BC0 func_80035190 func_80035CE8)
-    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_motion.c")
+    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_motion.c")
     tekken3_wrap_generated(func_8003AD10 func_80037CBC func_8006A3BC)
-    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_combat.c")
-    set(JUN_COMBAT_HOOKS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_jun_combat_generated.c")
-    set(JUN_PUSH_HOOKS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_jun_push_generated.c")
+    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_combat.c")
+    set(JUN_COMBAT_HOOKS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_combat_generated.c")
+    set(JUN_PUSH_HOOKS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_push_generated.c")
+    set(TTT_PART_LOOPS "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_parts06_generated.c"
+        "${CMAKE_CURRENT_BINARY_DIR}/tekken3_ttt_parts07_generated.c")
     add_custom_target(tekken3_jun_combat_codegen
-        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_jun_combat_hooks.py"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_ttt1_combat_hooks.py"
             --root "${CMAKE_CURRENT_SOURCE_DIR}" --output "${JUN_COMBAT_HOOKS}"
-        BYPRODUCTS "${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}" VERBATIM)
+        BYPRODUCTS "${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}" ${TTT_PART_LOOPS} VERBATIM)
     add_dependencies(psx-runtime tekken3_jun_combat_codegen)
-    target_sources(psx-runtime PRIVATE "${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}")
-    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_04.c" PROPERTIES HEADER_FILE_ONLY TRUE)
-    set_source_files_properties("${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}" PROPERTIES
+    target_sources(psx-runtime PRIVATE "${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}" ${TTT_PART_LOOPS})
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_04.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_06.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_004.02_full_07.c" PROPERTIES HEADER_FILE_ONLY TRUE)
+    set_source_files_properties("${JUN_COMBAT_HOOKS}" "${JUN_PUSH_HOOKS}" ${TTT_PART_LOOPS} PROPERTIES
         INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/generated")
     tekken3_wrap_generated(func_8002F3AC func_8003F098 func_8002DE24)
-    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_voices.c")
+    target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_ttt_voices.c")
     tekken3_wrap_generated(func_80040C90)
     tekken3_wrap_runtime(spu.c spu_render spu_set_host_mix_volume spu_init spu_snapshot_read)
     tekken3_wrap_generated(func_8002D178 func_80038B4C func_800389C0 func_8002D264 func_8002E8D0
@@ -179,18 +193,17 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_roster.c")
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_stage.c")
     target_sources(psx-runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_jun_stage_hooks.c")
-    tekken3_wrap_generated(func_800524EC func_80036600
-        func_80052938 func_80052940 func_8004B790 func_8004B928
-        func_80031BFC func_80052AD0
-        func_80052958 func_80052990 func_8006BF20
-        func_8003626C func_80036294 func_800362C4
-        func_8003F044
-        func_800513C0 func_80051464 func_8005155C func_80051660
-        func_80052948)
+    tekken3_wrap_generated(func_800524EC func_80036600)
 endif()
-if(NOT TEKKEN3_JUN_EXPERIMENTAL)
-    tekken3_wrap_generated(func_80031BFC)
-endif()
+# Shared extra-roster slots (imported fighters such as Jun, and developer
+# test fighters). They own every character-indexed hook the roster needs.
+target_sources(psx-runtime PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_roster.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tekken3_roster_proxies.c")
+tekken3_wrap_generated(func_8004B928 func_8004B790 func_80052938 func_80052940 func_80052948
+    func_80052958 func_80052990 func_8003F044 func_800513C0 func_80051464 func_8005155C
+    func_80051660 func_80031BFC func_80052AD0 func_8006BF20 func_8003626C func_80036294
+    func_800362C4)
 
 # A dynamic developer build can import the bundled Clang C++ runtime.  Stage it
 # when that actually happens; production builds use PSX_STATIC_RUNTIME and need
@@ -322,6 +335,38 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${JUN_PACKAGE}" "$<TARGET_FILE_DIR:psx-runtime>/mods/packages/tekken3.character.jun-probe/1.0.0/manifest.toml"
         COMMENT "Staging private Jun character for the normal recomp launch"
         VERBATIM)
+    # Further TTT1 fighters share the import runtime; stage those exported.
+    # Each entry: asset prefix, mods/ directory, arcade outfits.
+    set(TTT1_IMPORTS)
+    foreach(TTT1_IMPORT IN LISTS TTT1_IMPORTS)
+        string(REPLACE ":" ";" TTT1_FIELDS "${TTT1_IMPORT}")
+        list(GET TTT1_FIELDS 0 TTT1_NAME)
+        list(GET TTT1_FIELDS 1 TTT1_KEY)
+        list(GET TTT1_FIELDS 2 TTT1_OUTFITS)
+        set(TTT1_DIR "${CMAKE_CURRENT_SOURCE_DIR}/workspace/jun-import/${TTT1_KEY}")
+        if(NOT EXISTS "${TTT1_DIR}/${TTT1_NAME}-TTT1-combat.jmv")
+            continue()
+        endif()
+        set(TTT1_ASSETS)
+        foreach(TTT1_OUTFIT RANGE 1 ${TTT1_OUTFITS})
+            foreach(TTT1_EXT 3dm relocs tim)
+                list(APPEND TTT1_ASSETS "${TTT1_DIR}/${TTT1_NAME}-TTT1-arcade-P${TTT1_OUTFIT}.${TTT1_EXT}")
+            endforeach()
+        endforeach()
+        foreach(TTT1_FILE combat.jmv tables.jst voices.juv ui.jui name.4bpp)
+            list(APPEND TTT1_ASSETS "${TTT1_DIR}/${TTT1_NAME}-TTT1-${TTT1_FILE}")
+        endforeach()
+        set(TTT1_PACKAGE_ID "tekken3.character.${TTT1_KEY}-probe")
+        set(TTT1_PACKAGE "${CMAKE_CURRENT_SOURCE_DIR}/mods/local-packages/${TTT1_PACKAGE_ID}/1.0.0/manifest.toml")
+        set_property(TARGET psx-runtime APPEND PROPERTY LINK_DEPENDS ${TTT1_ASSETS} "${TTT1_PACKAGE}")
+        add_custom_command(TARGET psx-runtime POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:psx-runtime>/mods/${TTT1_KEY}"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TTT1_ASSETS} "$<TARGET_FILE_DIR:psx-runtime>/mods/${TTT1_KEY}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:psx-runtime>/mods/packages/${TTT1_PACKAGE_ID}/1.0.0"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TTT1_PACKAGE}" "$<TARGET_FILE_DIR:psx-runtime>/mods/packages/${TTT1_PACKAGE_ID}/1.0.0/manifest.toml"
+            COMMENT "Staging private ${TTT1_NAME} character for the normal recomp launch"
+            VERBATIM)
+    endforeach()
     set_property(TARGET psx-runtime APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/mods/assets/jun-heavenly-garden/native/Heavenly-Garden.arc"
         "${CMAKE_CURRENT_SOURCE_DIR}/mods/assets/jun-heavenly-garden/native/Heavenly-Garden.mesh"

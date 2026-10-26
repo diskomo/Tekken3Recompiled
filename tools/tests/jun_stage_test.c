@@ -20,6 +20,7 @@ void psx_mod_write_byte(uint32_t a,uint8_t v) {ram[at(a)]=v;}
 void psx_mod_write_half(uint32_t a,uint16_t v) {memcpy(ram+at(a),&v,2);}
 void psx_mod_write_word(uint32_t a,uint32_t v) {memcpy(ram+at(a),&v,4);}
 void psx_mod_write_code_word(uint32_t a,uint32_t v) {psx_mod_write_word(a,v);code_writes++;}
+void psx_mod_log(const char *f,...) {(void)f;}
 uint32_t psx_mod_alloc_guest_memory(uint32_t size,uint32_t alignment) {
     assert(size==0x400 && alignment==16);return 0x9f028000;
 }

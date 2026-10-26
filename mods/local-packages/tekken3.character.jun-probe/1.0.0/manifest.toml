@@ -21,3 +21,8 @@ default_enabled = true
 [[plugin]]
 feature = "jun-probe"
 id = "tekken3.jun-probe"
+
+# Registers Jun in the shared extra roster (character 23).
+[[plugin]]
+feature = "jun-probe"
+id = "tekken3.jun-roster"

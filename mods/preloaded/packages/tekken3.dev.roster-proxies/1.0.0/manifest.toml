@@ -1,0 +1,38 @@
+format_version = 5
+id = "tekken3.dev.roster-proxies"
+version = "1.0.0"
+name = "Roster Test Fighters"
+author = "Tekken3Recomp"
+description = "Developer test: adds stand-in fighters that borrow stock characters, to exercise the extra roster slots."
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SLUS-00402"
+exe_sha256 = "fbda8b68e5799dbef4af39a161783bc670c15b0aa0e87dce65e210717da19b8c"
+
+[[feature]]
+id = "roster-proxies"
+name = "Roster Test Fighters"
+description = "Adds up to nine stand-in fighters with their own character IDs, each borrowing a stock fighter's models, moves and art. VS and Team Battle fit all of them; the Arcade-style select screen shows seven in 16:9 and one at 4:3. Restart after toggling."
+group = "Developer"
+default_enabled = false
+
+[[plugin]]
+feature = "roster-proxies"
+id = "tekken3.roster-proxies"
+
+[[plugin]]
+feature = "roster-proxies"
+id = "tekken3.extra-roster"
+
+[[option]]
+feature = "roster-proxies"
+id = "count"
+label = "Stand-in fighters"
+description = "How many stand-ins to add, in order: Paul, Law, Lei, King, Nina, Hwoarang, Jin, Julia, Bryan. The Arcade-style 16:9 select screen shows the first seven."
+type = "integer"
+min = 1
+max = 9
+step = 1
+default = 7

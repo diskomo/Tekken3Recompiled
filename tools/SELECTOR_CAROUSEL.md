@@ -13,12 +13,13 @@ with VM_READ-only access; it never sends input, pauses, or writes guest state.
 
 The normal selector and Team Battle use the same compact two-step host overlay.
 Choose a character with any attack button (or Start in the normal selector).
-That first press opens the carousel without committing a native costume. Left/Right
-or L1/R1 browse; Cross/A confirms, and Circle/B or Select unselects the character.
-Square/Triangle/Start also confirm inside the carousel. Release between steps;
-held opening, confirming and cancelling buttons cannot spill into the next choice.
-Only the controlling pad's directions/sticks are captured during the outfit step;
-the guest and its timer keep running, and the other player's input remains live.
+That first press opens the carousel without committing a native costume. L1/R1
+browse; Cross/A confirms, and Circle/B or Select unselects the character.
+Square/Triangle/Start also confirm inside the carousel. Any direction closes the
+carousel and passes through, so the roster cursor never stops responding. Release
+between steps; held opening, confirming and cancelling buttons cannot spill into
+the next choice. Only the controlling pad's buttons are captured during the outfit
+step; the guest and its timer keep running, and the other player's input remains live.
 Team Battle's Start still randomizes at the roster, outside the outfit step.
 Each team fighter remembers its own skin as actors rotate. Third-costume flags
 are borrowed before the first injected input and restored after selection.

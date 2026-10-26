@@ -6,6 +6,8 @@ extern "C" {
 #endif
 enum { T3_SKIN_NINA, T3_SKIN_XIAOYU, T3_SKIN_ANNA, T3_SKIN_KUMA,
        T3_SKIN_EDDY, T3_SKIN_JULIA, T3_SKIN_HEIHACHI, T3_SKIN_COUNT };
+/* Character IDs fit the game's 32-bit availability masks. */
+enum { T3_CHARACTERS = 32 };
 typedef struct Tekken3OutfitEntry {
     char id[48], name[40], art[64];
     int character, skin;
@@ -19,6 +21,8 @@ typedef struct Tekken3OutfitView {
 } Tekken3OutfitView;
 void tekken3_outfits_set_available(int skin, int available);
 void tekken3_outfits_set_character_available(int character, int available);
+/* Added roster fighters (IDs 21..31) offer their donor's original outfits. */
+void tekken3_outfits_set_character_donor(int character, int donor);
 void tekken3_outfits_set_character_override(int player, int character); /* -1: native selector ID */
 int tekken3_outfits_available(void);
 int tekken3_outfits_load_catalog(const char *path);

@@ -1,6 +1,8 @@
 # Jun: independent roster experiment
 
-Jun now occupies a new character entry in the PS1 recompilation. The experimental build has 22 selectable fighters: the 21 stock fighters plus Jun. Her character ID is 23 and her three outfit model IDs are 52, 53 and 54. ID 21 remains the Force enemies and ID 22 remains the empty-selection sentinel.
+Jun now occupies a new character entry in the PS1 recompilation. Her character ID is 23 and her three outfit model IDs are 52, 53 and 54. ID 21 remains the Force enemies and ID 22 remains the empty-selection sentinel.
+
+She is registered through the shared extra roster (`src/tekken3_roster.c`), which also hosts later imports and the developer stand-ins. The roster extends the game's tables, both selectors and the saved statistics; `src/tekken3_jun_roster.c` supplies her portrait, icons, name strip, stage, Tekken Force route and CPU opponent pools through its import hooks. Alone she fills the eleventh column of both cabinet rows; with other added fighters the cabinet grid grows to fourteen columns in 16:9 and the VS/Team Battle grid to ten.
 
 ## Play
 
@@ -28,14 +30,16 @@ Jun is the top-right tile in the cabinet selector and the last tile in Team Batt
 
 ### CPU opponent integration (September 20)
 
-`tekken3_jun_cpu.h` applies signature-guarded patches to BNS record 5's
-Arcade/Time Attack, Team Battle, and Survival generators. It adds bit 23 without
+`tekken3_roster_cpu.h` applies signature-guarded patches to BNS record 5's
+Arcade/Time Attack, Team Battle, and Survival generators. The shared roster
+passes it the bits of its imported fighters (Jun's 23) without
 enabling IDs 21 (Force enemies) or 22 (empty). Arcade's first four stock-roster
-matches and final Heihachi/Jin + Ogre progression are retained; Jun is eligible
-in its remaining random matches. Survival includes Jun in every progression
-tier. BNS record 0's new-run reset loops cover all 24 counter indices; the mode
-union accommodates Team counters through +A3 and Survival counters through +8F.
-The same-address Force overlay is deliberately untouched.
+matches and final Heihachi/Jin + Ogre progression are retained; imports are
+eligible in the remaining random matches. Survival includes them in every
+progression tier. BNS record 0's new-run reset loops cover one counter per ID
+up to the highest pooled one; with Jun, Team counters end at +A3 and
+Survival's at +8F, below Arcade's opponent route (+90..BC). Team Battle gathers candidates in 22 stack slots, so at most two imports
+join the pools. The same-address Force overlay is deliberately untouched.
 
 The 12-byte per-character CPU parameters at 80098260 are extended privately;
 Jun uses Jin's spacing/response parameters, while the native 3-by-10 difficulty
@@ -65,7 +69,7 @@ game process or save state is started by this test.
 
 | Component | Current result |
 |---|---|
-| Roster | Separate character 23/models 52–54; 22-cell cabinet grid (11 columns) and Team Battle grid (8 columns); native confirmation and widescreen cursor/portrait alignment |
+| Roster | Separate character 23/models 52–54 through the shared extra roster; cabinet grid of 11 columns (up to 14 in 16:9) and VS/Team Battle grid of 8–10 columns; widescreen cursor/portrait alignment |
 | Geometry | Three original TTT1 meshes (44,732 / 44,436 / 47,740 bytes); 168 / 164 / 172 verified relocations; 30 donor rows adapted to 27 native rows |
 | Textures | All 26 / 22 / 28 source TIM tiles and palettes; separate player texture pages and packet buffers |
 | Hair/bow/belt | Original rest rotations preserved through native updates; rigid attachment, with donor secondary motion still pending |
@@ -100,7 +104,7 @@ The jump follow-up preserves the signed horizontal-speed halfword at move-record
 
 The loader still reads a native Jin asset envelope to initialize PS1 structures. This is a compatibility dependency: Jun's selection, actor, model and moveset cache IDs remain independent. Native cached moveset headers stay intact; Jun uses private headers and per-player aliases.
 
-The Practice UI regression was reproduced from a cold boot, without save-state loading. The first correction protected command icons and font palettes but placed costume tiles in the shared-effects region; player reports exposed the missing coverage. The current `tekken3_jun_texture_layout.h` packs individual TIM tiles into local `(0,0,64,224)` plus `(64,0,16,128)`, based at `(384,player*256)`. The latter is Jun's disabled native face-backup space. `tools/plan_jun_texture_atlas.py` generates the table and verifies every polygon lies within one source tile. Packet UVs, uploads, expression updates and immutable checks all follow that layout. Menu thumbnails use `(384,160)` / `(400,160)` only during menus, restoring native texture and palette contents at exit, including intervening native writes. Knocked-out thumbnails use a Jun-indexed grey palette at `(0,501)` instead of the native stock-portrait CLUT `(256,501)`; it is also restored at exit. This follow-up has offline checks only; gameplay is reserved for the user. `tools/test_jun_practice_ui.py` remains available for later explicitly requested cold-boot testing. The native move-list descriptions remain Jin's; Jun-specific move-list content is not implemented by this rendering fix.
+The Practice UI regression was reproduced from a cold boot, without save-state loading. The first correction protected command icons and font palettes but placed costume tiles in the shared-effects region; player reports exposed the missing coverage. The current `tekken3_jun_texture_layout.h` packs individual TIM tiles into local `(0,0,64,224)` plus `(64,0,16,128)`, based at `(384,player*256)`. The latter is Jun's disabled native face-backup space. `tools/plan_ttt1_texture_atlas.py` generates the table and verifies every polygon lies within one source tile. Packet UVs, uploads, expression updates and immutable checks all follow that layout. Menu thumbnails use `(384,160)` / `(400,160)` only during menus, restoring native texture and palette contents at exit, including intervening native writes. Knocked-out thumbnails use a Jun-indexed grey palette at `(0,501)` instead of the native stock-portrait CLUT `(256,501)`; it is also restored at exit. This follow-up has offline checks only; gameplay is reserved for the user. `tools/test_jun_practice_ui.py` remains available for later explicitly requested cold-boot testing. The native move-list descriptions remain Jin's; Jun-specific move-list content is not implemented by this rendering fix.
 
 ## Three arcade outfits
 
@@ -109,6 +113,8 @@ Jun now has all three original TTT1 arcade outfits: blue denim, white waistcoat 
 Direct cabinet selection uses **punch** for outfit 1, **kick** for outfit 2, and **Start / Enter** for outfit 3. In Team Battle, use **Square / Z**, **Cross / X**, and **Triangle / A** respectively; Start retains native random-team selection.
 
 The importer extracts verified arcade models **46, 47 and 118**, with 26, 22 and 28 texture tiles and 168, 164 and 172 relocations. The expansion archive begins at model ID 102, so model 118 is member 16. `tools/data/jun_costumes.json` records source offsets, hashes and relocation maps. `tools/capture_jun_costumes.lua` can reproduce the relocation audit using a fresh MAME run and `JUN_CAPTURE_OUTFIT=1`, `2` or `3`.
+
+Expressions now use each outfit's own face destination from the arcade face table (`0x801945D8`): (16,64) for outfit 1, (16,0) for outfit 2 and (48,0) for outfit 3. Earlier builds used outfit 1's position for all three, pasting the face over another texture in outfits 2 and 3. The runtime is shared by every imported TTT1 fighter (`src/tekken3_ttt_fighters.c`); arcade model rows are copied whole from +16, which for Jun only leaves the donor's end-of-table row intact.
 
 Each outfit has a distinct native model cache ID. Both players retain their own packets, textures and combat state in mixed-outfit mirrors. Optional hair/bow/belt pieces follow the source model's presence, rest rotation and attachment parent. The native facial-copy table is extended with disabled entries for these models because Jun's own imported events upload her expressions; this prevents out-of-range native copies into faces or fonts.
 
@@ -119,9 +125,9 @@ Each outfit has a distinct native model cache ID. Both players retain their own 
 ```powershell
 python tools/prepare_jun_import.py
 python tools/ttt1_motion.py --validate-capture workspace/jun-import/jun-motion-poses.csv
-python tools/convert_jun_moves.py
+python tools/convert_ttt1_moves.py
 python tools/prepare_jun_ui.py
-python tools/prepare_jun_voices.py
+python tools/prepare_ttt1_voices.py
 cmake -S . -B build-debug-server-lite -DTEKKEN3_JUN_EXPERIMENTAL=ON
 cmake --build build-debug-server-lite --target psx-runtime -j 12
 python tools/launch_jun_preview.py --selector --roster
@@ -146,8 +152,8 @@ python tools/test_jun_roster.py --case hit --visible
 python tools/test_jun_roster.py --case jab
 python tools/test_jun_roster.py --case push
 python tools/test_jun_roster.py --case push-p2
-clang tools/tests/jun_voice_test.c -I psxrecomp/runtime/include -o workspace/jun-import/jun-voice-test.exe
-clang tools/tests/jun_ui_palette_test.c -I psxrecomp/runtime/include -o workspace/jun-import/jun-ui-palette-test.exe
+clang tools/tests/ttt_voice_test.c -I psxrecomp/runtime/include -o workspace/jun-import/jun-voice-test.exe
+clang tools/tests/ttt_ui_palette_test.c -I psxrecomp/runtime/include -o workspace/jun-import/jun-ui-palette-test.exe
 python tools/test_jun_solo.py --case combos
 python tools/test_jun_solo.py --case 24
 python tools/test_jun_solo.py --case left

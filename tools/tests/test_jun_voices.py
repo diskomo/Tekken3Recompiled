@@ -1,6 +1,6 @@
 import struct
 import unittest
-from tools.prepare_jun_voices import decode_sample, mulaw_table
+from tools.prepare_ttt1_voices import decode_sample, mulaw_table
 
 
 class JunVoiceDecodeTests(unittest.TestCase):
@@ -20,11 +20,19 @@ class JunVoiceDecodeTests(unittest.TestCase):
         self.assertGreater(max(struct.unpack('<'+'h'*(len(flat)//2), flat)), 0)
 
     def test_refuses_unsupported_flags_and_out_of_range_data(self):
-        for flags in (0, 10, 9, 0x18):
+        for flags in (10, 9, 0x18):
             with self.assertRaises(ValueError):
                 decode_sample(bytes(20), 0, 0, 10, flags)
         with self.assertRaises(ValueError):
             decode_sample(bytes(20), 0, 10, 25, 8)
+
+    def test_linear_samples_are_signed_bytes(self):
+        # Flag 0: signed 8-bit linear PCM (Armor King's voices).
+        up = decode_sample(bytes([0x40]) * 64, 0, 0, 63, 0)
+        down = decode_sample(bytes([0xc0]) * 64, 0, 0, 63, 0)
+        middle = len(up) // 4 * 2
+        self.assertGreater(struct.unpack_from('<h', up, middle)[0], 0)
+        self.assertLess(struct.unpack_from('<h', down, middle)[0], 0)
 
     def test_output_duration_uses_original_arcade_pitch(self):
         pcm = decode_sample(bytes([40])*8505, 0, 0, 8504, 8)

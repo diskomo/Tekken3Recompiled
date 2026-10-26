@@ -4,9 +4,8 @@
 #include "tekken3_main_menu.h"
 #include "cpu_state.h"
 #include "mod_plugins.h"
+#include "tekken3_guest.h"
 
-#define SCREEN 0x800ae204u
-#define PHASE 0x800ae224u
 #define SELECTION 0x80097f40u
 #define STOCK_STATE 0x800ebfb8u
 #define MENU_ENTRY 0x800db5b4u
@@ -68,9 +67,9 @@ static void remove_quit(unsigned count, unsigned index) {
 
 int tekken3_main_menu_enter(void) {
     if (quit_requested) return 1;
-    if (!psx_mod_game_started() || psx_mod_read_half(SCREEN) != 4 || !prepare())
+    if (!psx_mod_game_started() || psx_mod_read_half(T3_SCREEN) != 4 || !prepare())
         return 0;
-    unsigned phase = psx_mod_read_half(PHASE);
+    unsigned phase = psx_mod_read_half(T3_SCREEN_PHASE);
     unsigned count = psx_mod_read_word(state + 4);
     if (count < 1 || count > 11) return 0;
     int index = quit_index(count);

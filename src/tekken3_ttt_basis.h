@@ -1,5 +1,5 @@
-#ifndef TEKKEN3_JUN_BASIS_H
-#define TEKKEN3_JUN_BASIS_H
+#ifndef TEKKEN3_TTT_BASIS_H
+#define TEKKEN3_TTT_BASIS_H
 #include <stdint.h>
 
 /* B maps a native joint's local axes into the arcade model's axes.
@@ -10,7 +10,7 @@
  * Arcade -> native: inverse(B_parent) M B_joint.
  * Native -> arcade: B_parent M inverse(B_joint).
  * Translations remain the receiving model's bone lengths. */
-static inline void tekken3_jun_change_basis(int32_t m[9], unsigned bone,
+static inline void tekken3_ttt_change_basis(int32_t m[9], unsigned bone,
                                            int to_arcade)
 {
     static const unsigned char parent[18]={18,0,1,1,3,4,5,1,7,8,9,0,11,12,13,11,15,16};

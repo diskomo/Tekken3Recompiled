@@ -21,7 +21,7 @@ the source or collected in the setup archive's `licenses/` directory.
 
 MAME reference revision: `aab5dcadb6025303ba019d0189344a5df536a623`.
 System 12 ROM load metadata: `src/mame/namco/namcos12.cpp`, copyright smf,
-BSD-3-Clause. The C352 sample decoder in `tools/prepare_jun_voices.py` adapts
+BSD-3-Clause. The C352 sample decoder in `tools/prepare_ttt1_voices.py` adapts
 the MAME chip behavior; copyright R. Belmont and superctr, BSD-3-Clause.
 See `licenses/MAME-BSD-3-Clause.txt`. The easy launcher downloads the unmodified MAME 0.289 upstream distribution
 from https://github.com/mamedev/mame/releases/tag/mame0289, retaining its

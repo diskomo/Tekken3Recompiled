@@ -4,14 +4,16 @@
 #include "mod_plugins.h"
 #include "psx_sha256.h"
 #include "tekken3_jun_assets.h"
-#include "tekken3_jun_basis.h"
+#include "tekken3_ttt_basis.h"
+#include "tekken3_ttt_fighter.h"
+#include "tekken3_guest.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-extern unsigned tekken3_jun_motion_mode(void);
-extern unsigned tekken3_jun_player_motion_mode(unsigned player);
-extern const uint16_t *tekken3_jun_decoded_pose(uint32_t input);
+extern unsigned tekken3_ttt_motion_mode(void);
+extern unsigned tekken3_ttt_player_motion_mode(unsigned player);
+extern const uint16_t *tekken3_ttt_decoded_pose(uint32_t input);
 extern void __real_func_8003AD10(CPUState *cpu);
 static uint16_t idle[100][57];
 static int loaded;
@@ -20,7 +22,7 @@ static int was_neutral;
 
 static uint32_t pose_actor(CPUState *cpu) {
     for(unsigned p=0;p<2;p++) {
-        uint32_t actor=0x800a9228+p*0x188c;
+        uint32_t actor=T3_ACTOR(p);
         if(cpu->gpr[5]==actor+0xf74)return actor;
         /* The transition blender decodes the previous pose into its stack
          * before subtracting it from this actor's saved local matrices. */
@@ -29,13 +31,13 @@ static uint32_t pose_actor(CPUState *cpu) {
     return 0;
 }
 static int arcade_skeleton(uint32_t actor) {
-    return actor && tekken3_jun_player_motion_mode(actor==0x800aaab4)!=0;
+    return actor && tekken3_ttt_player_motion_mode(actor==T3_ACTOR_P2)!=0;
 }
 static void change_basis(uint32_t output) {
     for(unsigned bone=0;bone<18;bone++) {
         int32_t m[9];
         for(unsigned n=0;n<9;n++)m[n]=(int16_t)psx_mod_read_half(output+bone*32+n*2);
-        tekken3_jun_change_basis(m,bone,1);
+        tekken3_ttt_change_basis(m,bone,1);
         for(unsigned n=0;n<9;n++)psx_mod_write_half(output+bone*32+n*2,(uint16_t)m[n]);
     }
 }
@@ -57,7 +59,7 @@ static int load_motion(void) {
         for(unsigned i=0;i<32;i++) snprintf(actual+i*2,3,"%02x",hash[i]);
         ok=!strcmp(actual,"02a32dc9b370ed52e9aee028063ca918ff96bedfdf4afaf655368aacf56e0cd2");
     }
-    if(ok) { loaded=1; fprintf(stderr,"Jun motion: loaded original 100-frame arcade stance\n"); }
+    if(ok) { loaded=1; psx_mod_log("Jun motion: loaded original 100-frame arcade stance\n"); }
     return ok;
 }
 static int32_t mul12(int32_t a,int32_t b) { return (a*b)>>12; }
@@ -65,7 +67,7 @@ static void rotation(const uint16_t *angle,int32_t *matrix) {
     int32_t s[3],c[3];
     for(unsigned i=0;i<3;i++) {
         uint16_t a=i==2?angle[i]:(uint16_t)-angle[i];
-        uint32_t table=0x8001e8c4+((a>>3)&0x1ffe);
+        uint32_t table=T3_SINE_TABLE+((a>>3)&0x1ffe);
         s[i]=(int16_t)psx_mod_read_half(table);
         c[i]=(int16_t)psx_mod_read_half(table+0x800);
     }
@@ -82,14 +84,14 @@ void __wrap_func_8003AD10(CPUState *cpu) {
     if(cpu->pc==0 || cpu->pc==0x8003ad10) {
         uint32_t actor=pose_actor(cpu);
         int donor=arcade_skeleton(actor);
-        const uint16_t *p=tekken3_jun_decoded_pose(cpu->gpr[4]);
+        const uint16_t *p=tekken3_ttt_decoded_pose(cpu->gpr[4]);
         if(p) {
             static int reported;
-            if(!reported){reported=1;fprintf(stderr,"Jun combat: donor pose reached native skeleton bridge\n");}
+            if(!reported){reported=1;psx_mod_log("Jun combat: donor pose reached native skeleton bridge\n");}
             for(unsigned bone=0;bone<18;bone++) {
                 int32_t m[9];rotation(p+3+bone*3,m);
                 if(bone==0)for(unsigned n=3;n<9;n++)m[n]=-m[n];
-                if(actor && !donor)tekken3_jun_change_basis(m,bone,0);
+                if(actor && !donor)tekken3_ttt_change_basis(m,bone,0);
                 for(unsigned n=0;n<9;n++)psx_mod_write_half(cpu->gpr[5]+bone*32+n*2,(uint16_t)m[n]);
             }
             cpu->pc=cpu->gpr[31];return;
@@ -97,7 +99,7 @@ void __wrap_func_8003AD10(CPUState *cpu) {
         native_output=cpu->gpr[5];native_return=cpu->gpr[31];
         native_needs_basis=donor;
     }
-    unsigned mode=tekken3_jun_motion_mode();
+    unsigned mode=tekken3_ttt_motion_mode();
     const uint32_t actor=0x800a9228;
     int entry=cpu->pc==0 || cpu->pc==0x8003ad10;
     int player_one=entry && cpu->gpr[5]==actor+0xf74;
@@ -105,7 +107,9 @@ void __wrap_func_8003AD10(CPUState *cpu) {
     uint32_t clip=record>=0x80010000 && record<0x80200000 ? psx_mod_read_word(record):0;
     int neutral=clip>=0x80010000 && clip<0x80200000 &&
         psx_mod_read_word(clip)==0x38553880 && psx_mod_read_word(clip+4)==0x25242c28;
-    if(player_one && mode==1 && neutral && load_motion()) {
+    /* The neutral-only reference is Jun's own captured arcade stance. */
+    if(player_one && mode==1 && neutral &&
+       tekken3_ttt_player_fighter(0)==&tekken3_ttt_fighters[TTT_JUN] && load_motion()) {
         unsigned native_frame=(psx_mod_read_half(actor+0x58)-1u)%128;
         if(!was_neutral) stance_frame=0;
         else if(native_frame!=previous_frame) stance_frame=(stance_frame+1)%100;

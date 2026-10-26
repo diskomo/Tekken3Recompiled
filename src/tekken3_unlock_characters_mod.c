@@ -5,10 +5,11 @@
  * See the package README for the original address research.
  */
 #include "mod_plugins.h"
+#include "tekken3_guest.h"
 
 static void tekken3_unlock_characters(void)
 {
-    const uint32_t roster_address = 0x80097EF0u;
+    const uint32_t roster_address = T3_CHARACTER_MASK;
     const uint32_t roster_mask = 0x001FFFFFu;
     const uint32_t doctor_progress_address = 0x80097EF6u;
     if (!psx_mod_game_started()) return;

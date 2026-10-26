@@ -22,6 +22,39 @@ static uint32_t phys(uint32_t address) {
     return address & 0x1FFFFFu;
 }
 
+static struct { int columns, x0, pitch, cells; } declared_grid;
+
+void tekken3_selector_declare_cabinet_grid(int columns, int x0, int pitch,
+                                           int cells) {
+    if (columns < 12 || columns > 14 || pitch <= 0 || cells > 2 * columns)
+        columns = 0;
+    declared_grid.columns = columns;
+    declared_grid.x0 = x0;
+    declared_grid.pitch = pitch;
+    declared_grid.cells = cells;
+}
+
+static struct { int columns, x0, cells, stride; uint32_t table; } declared_team;
+
+void tekken3_selector_declare_team_grid(int columns, int x0, int cells,
+                                        uint32_t table, int stride) {
+    if (columns < 8 || columns > 10 || cells > 3 * columns || stride <= 0)
+        columns = 0;
+    declared_team.columns = columns;
+    declared_team.x0 = x0;
+    declared_team.cells = cells;
+    declared_team.table = table;
+    declared_team.stride = stride;
+}
+
+int tekken3_selector_team_grid(int *columns, uint32_t *table, int *stride) {
+    if (!declared_team.columns) return 0;
+    if (columns) *columns = declared_team.columns;
+    if (table) *table = declared_team.table;
+    if (stride) *stride = declared_team.stride;
+    return 1;
+}
+
 int tekken3_gameplay_retain(int retained, int enabled, int has_draw,
     int gameplay_draw, int framebuffer_changed, int32_t width, int32_t height,
     int video) {
@@ -89,6 +122,7 @@ static int other_menu_frame(const Tekken3SelectorPacket *packets, size_t count,
             uint32_t lo = kind == 1 ? menu_lo[buffer] : team_lo[buffer];
             uint32_t hi = lo + 0x3C00u;
             uint32_t tiles = 0, roster = 0, expanded_roster = 0, base = 0;
+            uint32_t declared_roster = 0;
             int bar = 0, gradients = 0, menu_fades = 0, menu_glyphs = 0;
             for (size_t i = 0; i < count; i++) {
                 const Tekken3SelectorPacket *p = &packets[i];
@@ -135,18 +169,36 @@ static int other_menu_frame(const Tekken3SelectorPacket *packets, size_t count,
                         unsigned cell = ((p->y - 70) / 63) * 8 + (p->x - 43) / 36;
                         if (cell < 22) expanded_roster |= 1u << cell;
                     }
+                    if (declared_team.columns && p->opcode == 0x65 && p->width == 32 &&
+                        p->x >= declared_team.x0 + 2 &&
+                        (p->x - declared_team.x0 - 2) % 36 == 0 &&
+                        (p->x - declared_team.x0 - 2) / 36 < declared_team.columns &&
+                        p->y >= 70 && p->y <= 196 && (p->y - 70) % 63 == 0 &&
+                        p->height >= 10 && p->height <= 58)
+                        declared_roster |= 1u << (((p->y - 70) / 63) * declared_team.columns +
+                                                  (p->x - declared_team.x0 - 2) / 36);
                 }
             }
+            int declared_found = 0;
+            for (uint32_t bits = declared_roster; bits; bits &= bits - 1)
+                declared_found++;
+            int declared_match = declared_team.columns &&
+                                 declared_found == declared_team.cells;
             if ((kind == 1 && tiles == 0xFFFFFFu &&
                  (bar == 3 || (menu_fades == 3 && menu_glyphs >= 6))) ||
                 (kind == 2 && base && gradients == 3 &&
-                 (roster == 0x1FFFFFu || expanded_roster == 0x3FFFFFu))) {
+                 (roster == 0x1FFFFFu || expanded_roster == 0x3FFFFFu ||
+                  declared_match))) {
                 out->arena_lo = lo;
                 out->arena_hi = hi;
                 out->backdrop_source = base;
                 out->backdrop_height = 480;
                 out->layout_kind = kind;
                 out->roster_columns = kind == 2 ? (expanded_roster == 0x3FFFFFu ? 8 : 7) : 0;
+                if (kind == 2 && declared_match) {
+                    out->roster_columns = declared_team.columns;
+                    out->roster_x0 = declared_team.x0;
+                }
                 out->active = 1;
                 return 1;
             }
@@ -215,6 +267,30 @@ int tekken3_selector_analyze_frame(const Tekken3SelectorPacket *packets,
         expanded_roster |= 1u << (((p->y - 336) / 62) * 11 + (p->x - 3) / 33);
     }
     out->roster_columns = expanded_roster == 0x3FFFFFu ? 11 : 10;
+    if (declared_grid.columns) {
+        /* Accept the declaration only when every declared portrait is drawn
+         * on its lattice; otherwise keep the stock fingerprints. */
+        uint32_t cells = 0;
+        int found = 0;
+        for (i = 0; i < count; i++) {
+            const Tekken3SelectorPacket *p = &packets[i];
+            uint32_t source = phys(p->source_addr);
+            int column;
+            if (source < arena_lo || source >= arena_hi || p->opcode != 0x65 ||
+                p->width != 32 || p->height < 10 || p->height > 58 ||
+                (p->y != 336 && p->y != 398) || p->x < declared_grid.x0 ||
+                (p->x - declared_grid.x0) % declared_grid.pitch) continue;
+            column = (p->x - declared_grid.x0) / declared_grid.pitch;
+            if (column >= declared_grid.columns) continue;
+            cells |= 1u << ((p->y - 336) / 62 * declared_grid.columns + column);
+        }
+        for (; cells; cells &= cells - 1) found++;
+        if (found == declared_grid.cells) {
+            out->roster_columns = declared_grid.columns;
+            out->roster_x0 = declared_grid.x0;
+            out->roster_pitch = declared_grid.pitch;
+        }
+    }
     out->active = 1;
     return 1;
 }
@@ -266,6 +342,17 @@ static int roster_delta(int slot, int columns, int32_t margin) {
     return -reveal + rounded_div_nonnegative(slot * 2 * reveal, columns - 1);
 }
 
+/* A declared 12-14 column grid is compressed below 33px to fit 4:3. Space it
+ * at the stock 35px pitch (less if the canvas is narrower), centered. */
+static int declared_roster_delta(const Tekken3SelectorFrame *f, int slot,
+                                 int32_t margin) {
+    int columns = f->roster_columns;
+    int pitch = (f->display_width + 2 * margin - 32) / (columns - 1);
+    if (pitch > 35) pitch = 35;
+    int left = (f->display_width - (pitch * (columns - 1) + 32)) / 2;
+    return left + pitch * slot - (f->roster_x0 + f->roster_pitch * slot);
+}
+
 static int roster_slot_from_cursor(const Tekken3SelectorPacket *p) {
     int32_t authored_x;
     int32_t dx;
@@ -315,6 +402,10 @@ static Tekken3SelectorPlacement other_menu_place(
      * centered grid at the authored 36px pitch. Inclusive bounds matter. */
     int columns = f->roster_columns == 8 ? 8 : 7;
     int origin = columns == 8 ? 41 : 57;
+    if (f->roster_x0) {
+        columns = f->roster_columns;
+        origin = f->roster_x0;
+    }
     if (p->y >= 60 && p->y + p->height <= 258 &&
         (p->opcode == 0x40 || p->opcode == 0x64 || p->opcode == 0x65) &&
         p->width <= 36 && p->height <= 64 &&
@@ -366,25 +457,34 @@ Tekken3SelectorPlacement tekken3_selector_place(
      * Classify their faces, Gon strips, cursor halves and player label before
      * source-relative cabinet art. The guest clips the roster during ordinary
      * presents, so all of these must also reach the unclipped wide surface. */
-    if (frame->roster_columns == 11) {
+    if (frame->roster_columns >= 11) {
+        int columns = frame->roster_columns;
+        int x0 = columns == 11 ? 3 : frame->roster_x0;
+        int pitch = columns == 11 ? 33 : frame->roster_pitch;
         int slot = -1;
         if (packet->opcode == 0x65 && packet->width == 32 &&
             packet->height > 0 && packet->y >= 336 && packet->y + packet->height <= 456 &&
-            packet->x >= 3 && (packet->x - 3) % 33 == 0)
-            slot = (packet->x - 3) / 33;
+            packet->x >= x0 && (packet->x - x0) % pitch == 0)
+            slot = (packet->x - x0) / pitch;
+        /* Cursor halves start 2px left of or 16px right of a cell; the 2P
+         * label starts 18px right of it. */
         if (packet->opcode == 0x64 &&
             ((packet->width == 18 && (packet->y == 334 || packet->y == 396)) ||
              (packet->width == 20 && (packet->y == 328 || packet->y == 390)))) {
-            if (packet->x >= 1 && (packet->x - 1) % 33 == 0) slot = (packet->x - 1) / 33;
-            else if (packet->width == 20 && packet->x >= 21 && (packet->x - 21) % 33 == 0)
-                slot = (packet->x - 21) / 33;
-            else if (packet->width == 18 && packet->x >= 19 && (packet->x - 19) % 33 == 0)
-                slot = (packet->x - 19) / 33;
+            if (packet->x >= x0 - 2 && (packet->x - x0 + 2) % pitch == 0)
+                slot = (packet->x - x0 + 2) / pitch;
+            else if (packet->width == 20 && packet->x >= x0 + 18 &&
+                     (packet->x - x0 - 18) % pitch == 0)
+                slot = (packet->x - x0 - 18) / pitch;
+            else if (packet->width == 18 && packet->x >= x0 + 16 &&
+                     (packet->x - x0 - 16) % pitch == 0)
+                slot = (packet->x - x0 - 16) / pitch;
         }
-        if (slot >= 0 && slot < 11) {
+        if (slot >= 0 && slot < columns) {
             r.role = TEKKEN3_SELECTOR_ROSTER;
             r.group_id = 20u + (unsigned)slot;
-            r.sidecar_dx = roster_delta(slot, 11, margin);
+            r.sidecar_dx = columns == 11 ? roster_delta(slot, 11, margin)
+                                         : declared_roster_delta(frame, slot, margin);
             r.unclipped_sidecar = margin > 0;
             return r;
         }

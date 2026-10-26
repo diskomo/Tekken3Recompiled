@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from launch_jun_preview import ROOT, launch
 from test_jun_roster import Session, jab_damage
-from plan_jun_texture_atlas import inspect as inspect_atlas, pack as pack_atlas
+from plan_ttt1_texture_atlas import inspect as inspect_atlas, pack as pack_atlas
 
 
 class Costumes(Session):

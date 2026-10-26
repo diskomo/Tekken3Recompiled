@@ -2,9 +2,9 @@
 import struct
 import unittest
 from pathlib import Path
-from tools.convert_jun_moves import CONDITIONS,character_requirement
+from tools.convert_ttt1_moves import CONDITIONS,character_requirement
 from tools import jun_solo_semantics as solo
-from tools.build_jun_combat_hooks import generate_push
+from tools.build_ttt1_combat_hooks import generate_push
 
 PACK=Path(__file__).resolve().parents[2]/'workspace/jun-import/jun/Jun-TTT1-combat.jmv'
 
@@ -131,10 +131,10 @@ class JunExportTests(unittest.TestCase):
         root=PACK.parents[3]
         source=(root/'generated/SLUS_004.02_full_04.c').read_text()
         generated=generate_push(root)
-        prefix='#include <stdint.h>\nextern uint32_t tekken3_jun_push_base(void);\n'
+        prefix='#include <stdint.h>\nextern uint32_t tekken3_ttt_push_base(void);\n'
         self.assertTrue(generated.startswith(prefix))
-        self.assertEqual(generated.count('cpu->gpr[2] = tekken3_jun_push_base();'),6)
-        restored=generated[len(prefix):].replace('\n    cpu->gpr[2] = tekken3_jun_push_base();','')
+        self.assertEqual(generated.count('cpu->gpr[2] = tekken3_ttt_push_base();'),6)
+        restored=generated[len(prefix):].replace('\n    cpu->gpr[2] = tekken3_ttt_push_base();','')
         self.assertEqual(restored,source)
 
 if __name__=='__main__':unittest.main()

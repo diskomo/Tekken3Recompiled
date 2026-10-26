@@ -2,6 +2,7 @@
 #include "mod_plugins.h"
 #include "psx_runtime.h"
 #include "psx_sdl.h"
+#include "tekken3_guest.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +44,7 @@ static int load_portrait(void) {
         le32(portrait + 8) != 524 || le16(portrait + 16) != 256 ||
         le16(portrait + 18) != 1 || le32(portrait + 532) != 12 + 126 * 252 ||
         le16(portrait + 540) != 63 || le16(portrait + 542) != 252) {
-        fprintf(stderr, "Anna portrait: invalid native TIM; retaining stock art\n");
+        psx_mod_log( "Anna portrait: invalid native TIM; retaining stock art\n");
         return 0;
     }
     loaded = 1;
@@ -57,7 +58,7 @@ int tekken3_anna_portrait_decode(CPUState *cpu) {
     const int selector = cpu->gpr[31] == 0x8010e574 &&
         psx_mod_read_word(cpu->gpr[16] + 0x1c) == ANNA_ID;
     const int loading = cpu->gpr[31] == 0x8004c814 && cpu->gpr[20] < 2 &&
-        psx_mod_read_half(0x800add5c + cpu->gpr[20] * 2) == ANNA_ID;
+        psx_mod_read_half(T3_SIDE_CHARACTERS + cpu->gpr[20] * 2) == ANNA_ID;
     if (!selector && !loading) return 0;
     if (!load_portrait()) return 0;
     for (unsigned i = 0; i < sizeof portrait; ++i)
@@ -66,11 +67,3 @@ int tekken3_anna_portrait_decode(CPUState *cpu) {
     cpu->pc = cpu->gpr[31];
     return 1;
 }
-
-#if !defined(TEKKEN3_JUN_EXPERIMENTAL)
-extern void __real_func_80031BFC(CPUState *cpu);
-void __wrap_func_80031BFC(CPUState *cpu) {
-    if (tekken3_anna_portrait_decode(cpu)) return;
-    __real_func_80031BFC(cpu);
-}
-#endif

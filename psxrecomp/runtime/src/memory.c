@@ -33,7 +33,9 @@
 #define SCRATCHPAD_SIZE 1024
 #define BIOS_ROM_SIZE   (512 * 1024)
 #define MOD_MEMORY_BASE 0x1F000000u
-#define MOD_MEMORY_SIZE (1u * 1024u * 1024u)
+/* Inside expansion region 1, below the scratchpad at 0x1F800000. Imported
+ * fighters each need several hundred KiB beside the shared roster tables. */
+#define MOD_MEMORY_SIZE (4u * 1024u * 1024u)
 
 static uint8_t ram[RAM_SIZE];
 static uint8_t scratchpad[SCRATCHPAD_SIZE];

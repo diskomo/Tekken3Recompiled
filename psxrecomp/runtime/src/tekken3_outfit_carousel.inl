@@ -16,10 +16,14 @@ static uint32_t outfit_cards[2][OUTFIT_W*OUTFIT_H];
 
 static unsigned outfit_u16(const unsigned char *p){return p[0]|(unsigned)p[1]<<8;}
 static uint32_t outfit_u32(const unsigned char *p){return outfit_u16(p)|(uint32_t)outfit_u16(p+2)<<16;}
-static void outfit_jun_portrait(OutfitArt *a,const char *base) {
-    char path[1400];const char *override=getenv("TEKKEN3_JUN_ASSETS");
-    if(override && override[0])snprintf(path,sizeof path,"%s/Jun-T3-ui.jui",override);
-    else snprintf(path,sizeof path,"%smods/jun/Jun-T3-ui.jui",base?base:"");
+/* Imported fighters without outfit art show their private select portrait. */
+static const struct {const char *prefix,*env,*dir,*pack;} outfit_imports[]={
+    {"jun-arcade-","TEKKEN3_JUN_ASSETS","jun","Jun-T3-ui.jui"},
+};
+static void outfit_import_portrait(OutfitArt *a,const char *base,unsigned fighter) {
+    char path[1400];const char *override=getenv(outfit_imports[fighter].env);
+    if(override && override[0])snprintf(path,sizeof path,"%s/%s",override,outfit_imports[fighter].pack);
+    else snprintf(path,sizeof path,"%smods/%s/%s",base?base:"",outfit_imports[fighter].dir,outfit_imports[fighter].pack);
     FILE *f=fopen(path,"rb");if(!f)return;
     unsigned char *data=(unsigned char*)malloc(40576);
     int valid=data && fread(data,1,40576,f)==40576 && fgetc(f)==EOF;fclose(f);
@@ -61,7 +65,9 @@ static OutfitArt *outfit_load_art(const char *name) {
 #endif
     snprintf(path,sizeof path,"%smods/outfit-menu/%s.rgba",base?base:"",name);
     FILE *f=fopen(path,"rb");
-    if(!f && !strncmp(name,"jun-arcade-",11))outfit_jun_portrait(a,base);
+    for(unsigned i=0;!f && i<sizeof outfit_imports/sizeof *outfit_imports;i++)
+        if(!strncmp(name,outfit_imports[i].prefix,strlen(outfit_imports[i].prefix)))
+            outfit_import_portrait(a,base,i);
 #if !defined(PSX_SDL3)
     SDL_free(base);
 #endif
@@ -109,7 +115,7 @@ int host_osd_outfit_image(int player,const uint32_t **pixels,int *w,int *h) {
     if(!v.visible || !v.has_extra)return 0;
     uint32_t *dst=outfit_cards[player];memset(dst,0,sizeof outfit_cards[player]);
     uint32_t accent=player?0xff709de5:0xffe5ba57;
-    char line[48];snprintf(line,sizeof line,"%s  %02d/%02d  < >: OUTFIT",v.cpu?"CPU":player?"2P":"1P",v.index+1,v.count);
+    char line[48];snprintf(line,sizeof line,"%s  %02d/%02d  L1/R1: OUTFIT",v.cpu?"CPU":player?"2P":"1P",v.index+1,v.count);
     outfit_rect(dst,0,0,OUTFIT_W,12,0xe0101010);outfit_text(dst,4,2,line,accent);
     int portrait_fallback=0;
     for(int slot=0;slot<3;slot++) {
