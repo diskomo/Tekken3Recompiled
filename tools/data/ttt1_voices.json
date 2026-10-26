@@ -316,6 +316,84 @@
           "flags": 8
         }
       }
+    },
+    "armorking": {
+      "sound_profile": 25,
+      "group_counts": [
+        5,
+        2,
+        1,
+        1
+      ],
+      "group_ids": [
+        196,
+        197,
+        198,
+        201,
+        202,
+        199,
+        200,
+        203,
+        200
+      ],
+      "samples": {
+        "196": {
+          "bank": 3,
+          "start": 6952,
+          "end": 11495,
+          "flags": 0,
+          "frequency": 5630
+        },
+        "197": {
+          "bank": 3,
+          "start": 11510,
+          "end": 17717,
+          "flags": 0,
+          "frequency": 5630
+        },
+        "198": {
+          "bank": 3,
+          "start": 17732,
+          "end": 25795,
+          "flags": 0,
+          "frequency": 5630
+        },
+        "199": {
+          "bank": 3,
+          "start": 25810,
+          "end": 29329,
+          "flags": 0,
+          "frequency": 6319
+        },
+        "200": {
+          "bank": 3,
+          "start": 29344,
+          "end": 32863,
+          "flags": 0,
+          "frequency": 6319
+        },
+        "201": {
+          "bank": 3,
+          "start": 32878,
+          "end": 39597,
+          "flags": 0,
+          "frequency": 6695
+        },
+        "202": {
+          "bank": 3,
+          "start": 39612,
+          "end": 47291,
+          "flags": 0,
+          "frequency": 7093
+        },
+        "203": {
+          "bank": 3,
+          "start": 47306,
+          "end": 60873,
+          "flags": 0,
+          "frequency": 6695
+        }
+      }
     }
   }
 }

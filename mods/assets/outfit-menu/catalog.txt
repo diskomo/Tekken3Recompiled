@@ -24,6 +24,8 @@ kunimitsu-arcade-3|25|PURPLE BODYSUIT|0x0008|-1|kunimitsu-arcade-3
 angel-arcade-1|26|WHITE ROBE|0x8000|-1|angel-arcade-1
 devil-arcade-1|27|PURPLE DEVIL|0x8000|-1|devil-arcade-1
 devil-arcade-2|27|MAGENTA DEVIL|0x4000|-1|devil-arcade-2
+armorking-arcade-1|28|GREY ARMOR|0x8000|-1|armorking-arcade-1
+armorking-arcade-2|28|BLUE ARMOR|0x4000|-1|armorking-arcade-2
 eddy-original-1|8|ORIGINAL OUTFIT 1|0x8000|-1|eddy-original-1
 eddy-original-2|8|ORIGINAL OUTFIT 2|0x4000|-1|eddy-original-2
 eddy-tiger|8|TIGER JACKSON|0x0008|-1|eddy-tiger

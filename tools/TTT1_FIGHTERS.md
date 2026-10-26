@@ -25,8 +25,8 @@ Kunimitsu follows the same way, as character 25 with all three arcade outfits
 python3 tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
 ```
 
-Angel and Devil follow as characters 26..27 (see their sections);
-import each the same way by name (`angel`, `devil`).
+Angel, Devil and Armor King follow as characters 26..28 (see their sections);
+import each the same way by name (`angel`, `devil`, `armorking`).
 
 ## How a locked fighter is imported
 
@@ -188,6 +188,28 @@ Character 27, two outfits (**Purple Devil**, model 66; **Magenta Devil**, model
   drawn in the HUD font's outline and shading, I (LEI) and L (LAW). His
   thumbnails open the band at row 96 (384, 400) with CLUT rows 489..491.
 
+## Armor King
+
+Character 28, two outfits (**Grey Armor**, model 52; **Blue Armor**, model 53),
+select ID 24, move IDs from 13312. He has no face entry (his mask) and five
+accessory rows, 24..28, on parts 18..23.
+
+- **Voices.** Profile 25's nine roles use eight samples, 196..203, stored as
+  signed 8-bit linear PCM (C352 flag 0) at four frequencies (5630..7093), which
+  `prepare_ttt1_voices.py` now decodes per sample. Sample 200 is both his
+  second damage cry and his victory voice, so the pack holds an entry for
+  each role.
+- **Opponent-specific damage.** Three throws hit some opponents with another
+  reaction and 19 instead of 20 damage. Those DYNH rows carry both damages in
+  their high halves, and the runtime swaps damage with the reaction.
+- **Input windows.** Four commands allow 94 or 114 frames of input. SLUS-00402
+  keeps 60 frames of input history and its matcher wraps that ring, so the
+  converter clamps them to 60 (`input_window_clamped`); they may need slightly
+  faster input than in the arcade.
+- **Menu art.** Portrait 0. The name strip is AR (HWOARANG), M (KUMA), OR
+  (DOCTOR B.), a four-column gap and KING. His thumbnails are 416 and 432 at
+  row 96 with CLUT rows 486..488.
+
 ## Outfit picker
 
 Every imported fighter's outfits are in the inline carousel (catalog entries
@@ -204,5 +226,5 @@ PORTRAIT.
   mirror, Kazuya against a CPU Jun, CPU Kazuya in Arcade and Survival, and
   Kunimitsu against Jin and in all-outfit mirrors were played.
 - Only Jun and Kazuya are random CPU opponents: Team Battle's candidate list
-  holds two imports, so Kunimitsu, Angel and Devil are left out.
+  holds two imports, so Kunimitsu, Angel, Devil and Armor King are left out.
 - Accessories are rigid (no secondary motion), as for Jun's hair and bow.

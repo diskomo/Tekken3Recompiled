@@ -150,6 +150,7 @@ workspace/.venv-import/bin/python tools/import_ttt1_fighter.py kazuya --ttt1 tek
 workspace/.venv-import/bin/python tools/import_ttt1_fighter.py kunimitsu --ttt1 tektagt.zip
 workspace/.venv-import/bin/python tools/import_ttt1_fighter.py angel --ttt1 tektagt.zip
 workspace/.venv-import/bin/python tools/import_ttt1_fighter.py devil --ttt1 tektagt.zip
+workspace/.venv-import/bin/python tools/import_ttt1_fighter.py armorking --ttt1 tektagt.zip
 cmake -S . -B build-release -DTEKKEN3_JUN_EXPERIMENTAL=ON
 cmake --build build-release --target psx-runtime
 ```

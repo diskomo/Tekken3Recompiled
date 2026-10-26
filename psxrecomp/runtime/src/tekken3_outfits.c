@@ -34,6 +34,8 @@ static const Tekken3OutfitEntry defaults[] = {
  {"angel-arcade-1","WHITE ROBE","angel-arcade-1",26,-1,0x8000},
  {"devil-arcade-1","PURPLE DEVIL","devil-arcade-1",27,-1,0x8000},
  {"devil-arcade-2","MAGENTA DEVIL","devil-arcade-2",27,-1,0x4000},
+ {"armorking-arcade-1","GREY ARMOR","armorking-arcade-1",28,-1,0x8000},
+ {"armorking-arcade-2","BLUE ARMOR","armorking-arcade-2",28,-1,0x4000},
  {"eddy-original-1","ORIGINAL OUTFIT 1","eddy-original-1",8,-1,0x8000},
  {"eddy-original-2","ORIGINAL OUTFIT 2","eddy-original-2",8,-1,0x4000},
  {"eddy-tiger","TIGER JACKSON","eddy-tiger",8,-1,0x0008},

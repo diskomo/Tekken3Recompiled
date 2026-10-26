@@ -1,0 +1,28 @@
+format_version = 5
+id = "tekken3.character.armorking-probe"
+version = "1.0.0"
+name = "Armor King (TTT1)"
+author = "Tekken3Recomp"
+description = "Adds Armor King as a separate fighter with both arcade outfits, voices, menu art and solo TTT1 combat conversion. Requires locally imported donor assets."
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SLUS-00402"
+exe_sha256 = "fbda8b68e5799dbef4af39a161783bc670c15b0aa0e87dce65e210717da19b8c"
+
+[[feature]]
+id = "armorking-probe"
+name = "Armor King"
+description = "Adds Armor King to both character selectors with solo moves, throws and victory animations. Tag mechanics are excluded."
+group = "Characters"
+default_enabled = true
+
+[[plugin]]
+feature = "armorking-probe"
+id = "tekken3.armorking-probe"
+
+# Registers Armor King in the shared extra roster (character 28).
+[[plugin]]
+feature = "armorking-probe"
+id = "tekken3.armorking-roster"

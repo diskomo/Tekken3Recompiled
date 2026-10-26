@@ -5,6 +5,7 @@
 #include "tekken3_kunimitsu_layout.h"
 #include "tekken3_angel_layout.h"
 #include "tekken3_devil_layout.h"
+#include "tekken3_armorking_layout.h"
 
 /* Arcade face table 801945D8 for models 46, 47 and 118. */
 static const TttFace jun_faces[3]={
@@ -43,4 +44,10 @@ const TttFighter tekken3_ttt_fighters[TTT_FIGHTER_COUNT]={
      .accessory_first=DEVIL_ACCESSORY_FIRST,.accessory_last=DEVIL_ACCESSORY_LAST,
      .parts=DEVIL_PARTS,
      .voice_size=335696,.voice_sha="b064228e20d53b0034815c4e46bb4679da8a72c4dd20cc045054b8429ef8b3cc"},
+    {.name="ArmorKing",.dir="armorking",.env="TEKKEN3_ARMORKING_ASSETS",.roster_id=28,.source_key=24,.base_id=13312,
+     .outfits=ARMORKING_OUTFITS,.costumes=armorking_costume_specs,.texture_counts=armorking_texture_counts,
+     .texture_tiles=armorking_texture_tiles,.faces=armorking_faces,.rows=ARMORKING_ROWS,
+     .accessory_first=ARMORKING_ACCESSORY_FIRST,.accessory_last=ARMORKING_ACCESSORY_LAST,
+     .parts=ARMORKING_PARTS,
+     .voice_size=598756,.voice_sha="7e80b97d3401c4978ae5c7f4053e49a2d1b5aa6b230d2f566e5ea65e8b2c2c4b"},
 };
