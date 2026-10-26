@@ -322,6 +322,16 @@ if(TEKKEN3_JUN_EXPERIMENTAL)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${JUN_PACKAGE}" "$<TARGET_FILE_DIR:psx-runtime>/mods/packages/tekken3.character.jun-probe/1.0.0/manifest.toml"
         COMMENT "Staging private Jun character for the normal recomp launch"
         VERBATIM)
+    set(HD_PORTRAITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/workspace/headshots/pack")
+    if(EXISTS "${HD_PORTRAITS_DIR}/portraits.map")
+        set(HD_PORTRAITS_ASSETS "${HD_PORTRAITS_DIR}/portraits.map" "${HD_PORTRAITS_DIR}/portraits.rgba")
+        set_property(TARGET psx-runtime APPEND PROPERTY LINK_DEPENDS ${HD_PORTRAITS_ASSETS})
+        add_custom_command(TARGET psx-runtime POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:psx-runtime>/mods/hd-portraits"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${HD_PORTRAITS_ASSETS} "$<TARGET_FILE_DIR:psx-runtime>/mods/hd-portraits"
+            COMMENT "Staging private HD selector portraits"
+            VERBATIM)
+    endif()
     set_property(TARGET psx-runtime APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/mods/assets/jun-heavenly-garden/native/Heavenly-Garden.arc"
         "${CMAKE_CURRENT_SOURCE_DIR}/mods/assets/jun-heavenly-garden/native/Heavenly-Garden.mesh"

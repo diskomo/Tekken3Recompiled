@@ -68,6 +68,7 @@
 #include "gpu_sw_renderer.h"
 #include "gpu_gl_renderer.h"
 #include "gpu_hd_texture_match.h"
+#include "gpu_hd_portraits.h"
 #include "native_wide_present_authority.h"
 #include "native_wide_hole_fill_policy.h"
 #include "host_osd.h"
@@ -382,6 +383,9 @@ static GLuint s_jun_background_tex;
 static GLuint s_jun_ground_tex;
 static GLint s_uJunBackground = -1;
 static GLint s_uJunGround = -1;
+static HdPortraits s_portraits;
+static GLuint s_portrait_tex;
+static GLint s_uHdPortraits = -1;
 /* Kinds 1..9 are the forest and up to seven character packs. */
 #define JUN_BACKGROUND_KIND 10
 #define JUN_GROUND_KIND 11
@@ -406,7 +410,7 @@ void gl_renderer_set_hd_texture_pack(const char *directory) {
 }
 
 static void skin_invalidate_maps(void) {
-    ++s_jun_background_map.generation;
+    ++s_jun_background_map.generation; ++s_portraits.generation;
     for (int i = 0; i < HD_SKIN_COUNT; ++i) ++s_skin_map[i].generation;
 }
 
@@ -430,7 +434,7 @@ static GLuint hd_load_image(const char *directory, const char *name, int repeat_
     if (!f) return 0;
     if (fread(magic, 1, 8, f) != 8 || memcmp(magic, "HDRGBA01", 8) ||
         fread(&w, 4, 1, f) != 1 || fread(&h, 4, 1, f) != 1 ||
-        !w || !h || w > 8192 || h > 8192 || (uint64_t)w*h > 16777216) {
+        !w || !h || w > 8192 || h > 8192 || (uint64_t)w*h > 33554432) {
         fclose(f); return 0;
     }
     size_t size = (size_t)w*h*4;
@@ -506,6 +510,29 @@ static void jun_background_load(void) {
     }
     for(uint32_t i=0;i<s_jun_background_map.count;i++)
         s_jun_background_map.tiles[i].kind=i<6?JUN_BACKGROUND_KIND:JUN_GROUND_KIND;
+}
+/* Selector portraits, upscaled. Matched by the uploaded pixels, so any
+ * mod that replaces a portrait simply keeps its own image. */
+static void portraits_load(void) {
+    char directory[1200],path[1300];
+    const char *base=SDL_GetBasePath(), *disabled=getenv("PSX_HD_PORTRAITS");
+    hd_portraits_clear(&s_portraits);
+    s_portrait_tex=0;
+    if(!base)return;
+    int n=snprintf(directory,sizeof directory,"%smods/hd-portraits",base);
+#if !defined(PSX_SDL3)
+    SDL_free((void*)base);
+#endif
+    if(n<0 || n>=(int)sizeof directory || (disabled && !strcmp(disabled,"0")))return;
+    snprintf(path,sizeof path,"%s/portraits.map",directory);
+    if(!hd_portraits_load(&s_portraits,path))return;
+    s_portrait_tex=hd_load_image(directory,"portraits",0);
+    if(!s_portrait_tex) {
+        hd_portraits_clear(&s_portraits);
+        fprintf(stdout,"HD portraits: incomplete pack at %s; using original portraits\n",directory);
+        return;
+    }
+    fprintf(stdout,"HD portraits: %u portraits enabled\n",s_portraits.count);
 }
 static void skin_load_pack(void) {
     for (int i = 0; i < HD_SKIN_COUNT; ++i) {
@@ -1197,7 +1224,7 @@ static const char *TEX_FS =
     "uniform sampler2D u_hd_char0; uniform sampler2D u_hd_char1; uniform sampler2D u_hd_char2; uniform sampler2D u_hd_char3;\n"
     "uniform sampler2D u_hd_char4; uniform sampler2D u_hd_char5; uniform sampler2D u_hd_char6;\n"
     "uniform sampler2D u_jun_background;\n"
-    "uniform sampler2D u_jun_ground;\n"
+    "uniform sampler2D u_jun_ground; uniform sampler2D u_hd_portraits;\n"
     "out vec4 frag; out vec4 blend_factor;\n"
     "flat in ivec2 v_tpage;   /* texture page base, VRAM px */\n"
     "flat in ivec2 v_clut;    /* CLUT base, VRAM px */\n"
@@ -1241,7 +1268,13 @@ static const char *TEX_FS =
     "   * AND this prim's packet carried full GTE projection provenance, so the\n"
     "   * default is the PS1's affine (noperspective) mapping. */\n"
     "  vec2 uv = (v_persp != 0) ? v_uv_p : v_uv;\n"
-    "  if (v_hd_kind != 0) {\n"
+    "  if (v_hd_kind == 12) {\n"
+    "    /* Portraits cut out by their own alpha, not the low-res texels. */\n"
+    "    vec4 hd = texture(u_hd_portraits, v_persp != 0 ? v_hd_uv_p : v_hd_uv);\n"
+    "    if (hd.a < 0.5) discard;\n"
+    "    rgb = hd.rgb;\n"
+    "    stp = (fetch_texel(int(floor(uv.x)), int(floor(uv.y))) >> 15) & 1;\n"
+    "  } else if (v_hd_kind != 0) {\n"
     "    int raw = fetch_texel(int(floor(uv.x)), int(floor(uv.y)));\n"
     "    if (raw == 0) discard;\n"
     "    stp = (raw >> 15) & 1;\n"
@@ -2022,6 +2055,9 @@ static void flush_tex_batch(void) {
     p_glActiveTexture(PSXGL_TEXTURE0 + 4 + HD_SKIN_COUNT);
     glBindTexture(GL_TEXTURE_2D,s_jun_ground_tex);
     p_glUniform1i(s_uJunGround,4 + HD_SKIN_COUNT);
+    p_glActiveTexture(PSXGL_TEXTURE0 + 5 + HD_SKIN_COUNT);
+    glBindTexture(GL_TEXTURE_2D,s_portrait_tex);
+    p_glUniform1i(s_uHdPortraits,5 + HD_SKIN_COUNT);
     p_glActiveTexture(PSXGL_TEXTURE0);
     p_glUniform4i(s_uTwin, s_tb_twin[0], s_tb_twin[1], s_tb_twin[2], s_tb_twin[3]);
     p_glUniform1i(s_uMaskset, s_tb_mask);
@@ -2258,10 +2294,12 @@ static void gpu_textured_triangle(const int *xs, const int *ys,
                             : hd_map_find(&s_skin_map[i], s_vram, base_x, base_y, depth,
                                           clut_x, clut_y, original_us, original_vs);
         }
+        if (!hd) hd = hd_portraits_find(&s_portraits, s_vram, base_x, base_y, depth,
+                                        original_us, original_vs);
     }
     if (hd && !(s_hd_seen & (1u << hd->kind))) {
         s_hd_seen |= 1u << hd->kind;
-        fprintf(stdout, "HD textures: matched %s in game\n", hd->kind == 1 ? "forest background" : hd->kind == 2 ? "forest ground" : hd->kind == JUN_BACKGROUND_KIND ? "Jun background" : hd->kind == JUN_GROUND_KIND ? "Jun water" : s_skin[hd->kind - 3].label);
+        fprintf(stdout, "HD textures: matched %s in game\n", hd->kind == 1 ? "forest background" : hd->kind == 2 ? "forest ground" : hd->kind == JUN_BACKGROUND_KIND ? "Jun background" : hd->kind == JUN_GROUND_KIND ? "Jun water" : hd->kind == HD_PORTRAIT_KIND ? "portrait" : s_skin[hd->kind - 3].label);
         fflush(stdout);
     }
 
@@ -2804,6 +2842,7 @@ static uint16_t glb_vram_read(int x,int y){ ensure_cpu(); return sw_vram_read(x,
 static void glb_vram_transfer_in(int x,int y,int w,int h,const uint16_t *d){
     ++s_hd_map.generation; skin_invalidate_maps();
     sw_vram_transfer_in(x,y,w,h,d);
+    hd_portraits_upload(&s_portraits, s_vram, x, y, w, h);
     depth24_upload_policy();
     if (s_depth24_skip_up && depth24_is_fb_transfer(x, y, w, h)) {
         /* Full-VRAM restore (boot_state): must stage into the FBO or every
@@ -2941,6 +2980,7 @@ static int init_gpu_raster(void) {
     s_uHdBackground = p_glGetUniformLocation(s_tex_prog, "u_hd_background");
     s_uJunBackground = p_glGetUniformLocation(s_tex_prog, "u_jun_background");
     s_uJunGround = p_glGetUniformLocation(s_tex_prog, "u_jun_ground");
+    s_uHdPortraits = p_glGetUniformLocation(s_tex_prog, "u_hd_portraits");
     s_uHdGround = p_glGetUniformLocation(s_tex_prog, "u_hd_ground");
     for (int i = 0; i < HD_SKIN_COUNT; ++i) {
         char name[16];
@@ -2949,6 +2989,7 @@ static int init_gpu_raster(void) {
     }
     hd_load_pack();
     jun_background_load();
+    portraits_load();
     skin_load_pack();
     s_uTpage = p_glGetUniformLocation(s_tex_prog, "u_tpage");
     s_uClut  = p_glGetUniformLocation(s_tex_prog, "u_clut");
@@ -3199,6 +3240,8 @@ void gl_renderer_shutdown(void) {
         glDeleteTextures(1,&s_jun_background_tex);s_jun_background_tex=0;
         glDeleteTextures(1,&s_jun_ground_tex);s_jun_ground_tex=0;
         hd_map_clear(&s_jun_background_map);
+        glDeleteTextures(1,&s_portrait_tex);s_portrait_tex=0;
+        hd_portraits_clear(&s_portraits);
         glDeleteTextures(HD_SKIN_COUNT, s_skin_tex);
         for (int i = 0; i < HD_SKIN_COUNT; ++i) {
             s_skin_tex[i] = 0;
