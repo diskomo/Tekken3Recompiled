@@ -16,7 +16,7 @@ with a completed setup can update through the launcher. If Jun setup failed on
 v0.1.3, extract v0.1.4 over the same folder and retry setup. From v0.1.4
 onward, the launcher can install newer full releases in place. See
 [RELEASE-NOTES.md](RELEASE-NOTES.md) for this patch's changelog and
-[LAUNCHER.md](LAUNCHER.md) for the update workflow.
+[LAUNCHER.md](docs/LAUNCHER.md) for the update workflow.
 
 Native-port and static-recompilation research for **Tekken 3 (USA, SLUS-00402)** built on
 [psxrecomp](https://github.com/mstan/psxrecomp) and
@@ -55,7 +55,7 @@ Optional box art under `launcher_assets/img/` may come from
 
 For the Recompiled game, open `Play-Tekken3-Recompiled.cmd`. Its new native launcher
 always appears first, with mods, separate keyboard/controller mapping, and a local
-disc library. See [LAUNCHER.md](LAUNCHER.md) for usage and verification scope.
+disc library. See [LAUNCHER.md](docs/LAUNCHER.md) for usage and verification scope.
 
 For the native PC-port slice, build it once and then double-click
 [`Play-Tekken3-PC-Port.cmd`](Play-Tekken3-PC-Port.cmd):
@@ -158,7 +158,7 @@ Progressive map: `symbols.toml` → `python3 tools/sync_symbols.py` →
 
 ## Modding
 
-See [`MODDING.md`](MODDING.md) for the verified BNS asset-ID namespace,
+See [`MODDING.md`](docs/MODDING.md) for the verified BNS asset-ID namespace,
 local extraction workflow, `.psxmod` packaging, proposed loose overrides,
 testing checklist, and release-safe boundary.
 

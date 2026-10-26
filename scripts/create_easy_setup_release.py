@@ -24,8 +24,11 @@ BASE_VERSION = "v0.1.2-easy-setup"
 BASE_SHA256 = "807ebc7e88d870afa10d69a7517091bad1e2cd37bd2c6ff94aecca9194438ca9"
 SOURCE_DIRS = ("src", "tools", "mods", "native", "launcher_assets", "seeds", "psxrecomp", "recomp-ui", "launcher")
 ROOT_FILES = ("VERSION", "CMakeLists.txt", "codegen_setup.c", "codegen_setup.h", "game.toml",
-              "README.md", "RELEASE-NOTES.md", "MODDING.md", "Outfit-Slots.md", "LAUNCHER.md",
-              "framework_pins.txt", "catalog_identity.json", "symbols.toml")
+              "README.md", "RELEASE-NOTES.md", "docs/MODDING.md", "docs/Outfit-Slots.md",
+              "docs/LAUNCHER.md", "framework_pins.txt", "catalog_identity.json", "symbols.toml")
+CHANGELOGS = ROOT / "docs/changelogs"
+# Root docs earlier packages shipped; they now live under docs/.
+MOVED_DOCS = ("MODDING.md", "Outfit-Slots.md", "LAUNCHER.md")
 REQUIRED = ("VERSION", "Play Tekken 3.exe", "game.toml", ".runtime/python/python.exe",
             "launcher/easy_launcher.py", "launcher/setup_backend.py", "launcher/update_backend.py",
             "launcher/tools.lock.json")
@@ -53,10 +56,14 @@ def digest(path: Path) -> str:
 
 
 def source_files(tag: str):
-    for name in (*ROOT_FILES, f"CHANGELOG_{tag}.md"):
+    for name in ROOT_FILES:
         path = ROOT / name
         if path.is_file():
             yield name, path
+    # The patch changelog ships at the package root.
+    changelog = CHANGELOGS / f"CHANGELOG_{tag}.md"
+    if changelog.is_file():
+        yield changelog.name, changelog
     for folder in SOURCE_DIRS:
         base = ROOT / folder
         if not base.is_dir():
@@ -83,9 +90,9 @@ def main() -> None:
     if updater.version_tuple(version) is None or updater.version_tuple(version) <= updater.version_tuple(BASE_VERSION):
         raise SystemExit("VERSION must be newer than the v0.1.2 base package.")
     tag = "v" + version.lstrip("v")
-    changelog = f"CHANGELOG_{tag}.md"
-    if not (ROOT / changelog).is_file() or not (ROOT / changelog).read_text(encoding="utf-8").strip():
-        raise SystemExit(f"Exact patch changelog is missing: {changelog}")
+    changelog = CHANGELOGS / f"CHANGELOG_{tag}.md"
+    if not changelog.is_file() or not changelog.read_text(encoding="utf-8").strip():
+        raise SystemExit(f"Exact patch changelog is missing: {changelog.relative_to(ROOT)}")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     output = args.output_dir / f"Tekken3Recompiled-{tag}-Easy-Setup.zip"
     with tempfile.TemporaryDirectory(prefix="tekken3-package-") as temp:
@@ -96,6 +103,8 @@ def main() -> None:
         updater.report = lambda *_args, **_kwargs: None
         updater.stage_archive(archive, base_manifest, stage, BASE_VERSION)
         current = dict(source_files(tag))
+        for name in MOVED_DOCS:
+            (stage / name).unlink(missing_ok=True)
         for path in stage.rglob("*"):
             if path.is_file():
                 relative = path.relative_to(stage).as_posix()
@@ -109,7 +118,7 @@ def main() -> None:
             target = stage / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(source.read_bytes())
-        for name in (*REQUIRED, changelog):
+        for name in (*REQUIRED, changelog.name):
             if not (stage / name).is_file():
                 raise SystemExit(f"Package is missing {name}")
         # A future release must not accidentally retain the previous patch label.
